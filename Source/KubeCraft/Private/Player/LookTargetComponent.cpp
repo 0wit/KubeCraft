@@ -1,16 +1,16 @@
-#include "Player/LookTarget.h"
+#include "Player/LookTargetComponent.h"
 
 #include "Engine/HitResult.h"
 #include "Engine/World.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/Pawn.h"
 #include "World/VoxelChunk.h"
-#include "World/VoxelTypes.h"
 
-TOptional<FLookTarget> KubeCraft::Player::TraceLookTarget(const APawn& Viewer, float Reach)
+TOptional<FLookTarget> ULookTargetComponent::Trace() const
 {
-	const AController* Controller = Viewer.GetController();
-	const UWorld* World = Viewer.GetWorld();
+	const APawn* Viewer = GetOwner<APawn>();
+	const AController* Controller = Viewer ? Viewer->GetController() : nullptr;
+	const UWorld* World = GetWorld();
 	if (!Controller || !World)
 	{
 		return {};
@@ -23,8 +23,14 @@ TOptional<FLookTarget> KubeCraft::Player::TraceLookTarget(const APawn& Viewer, f
 
 	FHitResult Hit;
 	const FVector TraceEnd = ViewLocation + ViewRotation.Vector() * Reach;
-	const FCollisionQueryParams Params(SCENE_QUERY_STAT(TraceLookTarget), /*bTraceComplex*/ false, &Viewer);
+	const FCollisionQueryParams Params(SCENE_QUERY_STAT(LookTarget), /*bTraceComplex*/ false, Viewer);
 	if (!World->LineTraceSingleByChannel(Hit, ViewLocation, TraceEnd, ECC_Visibility, Params))
+	{
+		return {};
+	}
+	// A trace that starts inside a collision (e.g. a camera clipping into a block) hits no face: its normal is
+	// only the way out, not a face direction, so stepping along it could pick the wrong cell.
+	if (Hit.bStartPenetrating)
 	{
 		return {};
 	}

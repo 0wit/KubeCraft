@@ -35,7 +35,7 @@ Grouped by folder. Each folder is one **topic**, so a change usually stays in on
 | | `UChunkMeshComponent` | Draws one chunk's cubes | ✅ |
 | `Terrain/` – how the hills are made | `FTerrainGenerator` | Says how high the ground is at one spot | ✅ |
 | `Player/` – the player, and what they do with blocks | `AKubeCraftCharacter` | Walk, look, jump. Passes the mine/place buttons on | ✅ |
-| | `FLookTarget` (`LookTarget.h`) | Which cube am I looking at? | ✅ |
+| | `ULookTargetComponent` | Which cube am I looking at? One reach, shared by mining and placing | ✅ |
 | | `UMiningComponent` | Hold the button → cube breaks after its mining time | ✅ |
 | | `UPlacingComponent` | Press the button → a cube appears on the face you look at | ✅ |
 | `Game/` – start order of a game | `AKubeCraftGameMode` | Builds the world, then puts the player on it | ✅ |
@@ -70,7 +70,7 @@ noise 0.25  →  20 + 6 = 26 cubes high
 
 So a change stays small.
 Mining a cube redraws **only its own chunk**, not the whole world.
-(If the cube sits on a chunk border, the chunk next to it is redrawn too.)
+(If the cube sits on a chunk border and touches a cube of the next chunk, that chunk is redrawn too.)
 
 ## Positions (`World/VoxelTypes.h`)
 
@@ -119,6 +119,7 @@ So the chunk asks the world: "Is there a cube?" (`GetBlockOrNeighbor`)
 - At the edge of the world there's no neighbor → "air" → the outer wall is drawn.
 - Mining cube 15 opens a hole next to cube 0 of the next chunk.
   So the world redraws **both** chunks.
+- If cube 0 there is air, nothing changes for that chunk. Then only the own chunk is redrawn.
 
 Known limits ⚠️:
 - One changed cube redraws the **whole chunk**. To check the cost: type `stat KubeCraft` in the game console.
@@ -128,7 +129,7 @@ Known limits ⚠️:
 
 ```
 Left mouse held → Mining component, every frame (a stopwatch):
-   1. "Which cube am I looking at?"  (LookTarget: a line from the camera, max 5 cubes)
+   1. "Which cube am I looking at?"  (LookTarget component: a line from the camera, max 5 cubes)
    2. Same cube as last frame? → add the time. Other cube → start at 0.
    3. Time ≥ the cube's MineTime → World.MineBlock → the cube becomes air
 Left mouse released → stopwatch off and back to 0
@@ -190,7 +191,7 @@ Content/KubeCraft/         Blocks/, Blueprints/, Input/, Materials/, Maps/L_Worl
 | Add a block | New `BlockDefinition` asset + material. Add it at the end of `DA_BlockCatalog`. |
 | Change mining time | `MineTime` in the block asset. |
 | Make a block unbreakable | Turn off `bBreakable` in the block asset. |
-| Change how far the player reaches | `BP_KubeCraftCharacter` → Mining / Placing → Reach. |
+| Change how far the player reaches | `BP_KubeCraftCharacter` → LookTarget → Reach. |
 | Change a mining/placing limit | `Blocks/BlockRules.cpp`. |
 | Change player size / jump | Numbers at the top of `Player/KubeCraftCharacter.cpp`. |
 | Change the hills | `BP_VoxelWorld` → Terrain. |
@@ -200,10 +201,17 @@ Content/KubeCraft/         Blocks/, Blueprints/, Input/, Materials/, Maps/L_Worl
 | See how long a chunk redraw takes | Play, open the console (`~`), type `stat KubeCraft`. |
 | Run the tests | Tools → Session Frontend → Automation → tick `KubeCraft` → Start. |
 
-Tests live in `Private/Tests/`. Their names follow the folders: `KubeCraft.<Folder>.<What>`.
+Tests live in `Private/Tests/`. There are two kinds:
+- **Unit tests** check one piece alone, with no world. Fast. Names follow the folders: `KubeCraft.<Folder>.<What>`.
+- **Integration tests** need real chunks, so they build a small temporary world first (`TestVoxelWorld.h`).
+  It has 2 × 2 chunks and flat ground: bedrock at height 0, stone at 1–3. Names: `KubeCraft.Integration.<What>`.
 
 | Test | Tests code in | Checks |
 |---|---|---|
 | `KubeCraft.World.Coordinates` | `World/VoxelTypes.h` | Position conversions, also negative ones. Which cube a hit means. |
 | `KubeCraft.Blocks.HeightBands` | `Blocks/BlockCatalog` | Which block goes at which height |
 | `KubeCraft.Terrain.Generator` | `Terrain/TerrainGenerator` | Same seed → same hills. Other seed → other hills. Height stays in the world. |
+| `KubeCraft.Integration.BlockRules` | `Blocks/BlockRules` | What may be mined. Where a block may be placed (floor, ceiling, edges, solid cells). |
+| `KubeCraft.Integration.MineAndPlace` | `World/VoxelWorld` | Mining and placing really change blocks. Placed type follows the height. A border change redraws the next chunk. |
+
+"No placing where a player stands" needs a real player, so it is checked by playing, not by a test.

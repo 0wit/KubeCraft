@@ -121,8 +121,8 @@ FVector AVoxelWorld::GetSurfaceLocation(const FIntPoint& Column) const
 
 bool AVoxelWorld::IsInsideWorld(const FIntVector& Block) const
 {
-	// The chunks are exactly as tall as the world, so the Z check is the floor and the ceiling.
-	return Block.Z >= 0 && Block.Z < ChunkHeight && FindChunk(BlockToChunk(Block));
+	// The chunks are exactly as tall as the world, so the chunk's own bounds are the floor and the ceiling.
+	return IsInsideChunk(BlockToLocal(Block)) && FindChunk(BlockToChunk(Block));
 }
 
 bool AVoxelWorld::MineBlock(const FIntVector& Block)
@@ -142,7 +142,13 @@ bool AVoxelWorld::PlaceBlock(const FIntVector& Block)
 	{
 		return false;
 	}
-	SetBlockAndRedraw(Block, Catalog->GetIdForHeight(Block.Z));
+	// Air means no height band covers this height: there is nothing to place.
+	const FBlockId Id = Catalog->GetIdForHeight(Block.Z);
+	if (Id == AirBlockId)
+	{
+		return false;
+	}
+	SetBlockAndRedraw(Block, Id);
 	return true;
 }
 
@@ -158,8 +164,13 @@ void AVoxelWorld::SetBlockAndRedraw(const FIntVector& Block, FBlockId Id)
 	Chunk->SetBlock(Local, Id);
 	Chunk->RebuildMesh();
 
-	auto RedrawNeighbor = [this, &ChunkCoord](const FIntPoint& Offset)
+	auto RedrawNeighbor = [this, &Block, &ChunkCoord](const FIntPoint& Offset)
 	{
+		// The neighbor only draws its solid cubes. If its cube next to ours is Air, none of its faces change.
+		if (GetBlock(Block + FIntVector(Offset.X, Offset.Y, 0)) == AirBlockId)
+		{
+			return;
+		}
 		if (AVoxelChunk* Neighbor = FindChunk(ChunkCoord + Offset))
 		{
 			Neighbor->RebuildMesh();

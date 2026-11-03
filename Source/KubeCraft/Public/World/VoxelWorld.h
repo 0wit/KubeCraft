@@ -48,7 +48,7 @@ public:
 
 	/**
 	 * Puts a block here if FBlockRules allows it and redraws what changed. Returns true if a block was placed.
-	 * The type comes from the height bands, like in the generated terrain.
+	 * The type comes from the height bands, like in the generated terrain; no band for that height means no block.
 	 */
 	bool PlaceBlock(const FIntVector& Block);
 
@@ -59,6 +59,11 @@ public:
 	UStaticMesh* GetBlockMesh() const { return BlockMesh; }
 
 private:
+#if WITH_DEV_AUTOMATION_TESTS
+	/** Builds small worlds with a catalog made in code for the automation tests (Private/Tests/TestVoxelWorld.h). */
+	friend struct FTestVoxelWorld;
+#endif
+
 	/**
 	 * Creates one chunk and fills it with blocks from the generator. Does not draw it yet.
 	 * BlockIdPerHeight holds the block type for each height Z (ChunkHeight entries), taken from the catalog.
@@ -71,7 +76,8 @@ private:
 
 	/**
 	 * Changes one block and redraws its chunk. A block on a chunk border also touches blocks of the
-	 * neighbor chunk, whose faces may appear or disappear, so that chunk is redrawn too.
+	 * neighbor chunk, whose faces may appear or disappear, so that chunk is redrawn too (only if the touching
+	 * block there is solid; otherwise nothing changes for it).
 	 */
 	void SetBlockAndRedraw(const FIntVector& Block, FBlockId Id);
 

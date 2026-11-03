@@ -7,6 +7,7 @@
 class UCameraComponent;
 class UInputAction;
 class UInputMappingContext;
+class ULookTargetComponent;
 class UMiningComponent;
 class UPlacingComponent;
 struct FInputActionValue;
@@ -14,7 +15,8 @@ struct FInputActionValue;
 /**
  * First-person player: a capsule sized to fit through 1x2 block gaps, a camera at eye height,
  * and Enhanced Input bindings for walking, looking, jumping, mining and placing.
- * Mining and placing are done by two components; the character only passes the buttons on to them.
+ * Mining and placing are done by two components that share one aim component (ULookTargetComponent);
+ * the character only passes the buttons on to them.
  * Input assets are assigned in the Blueprint subclass (BP_KubeCraftCharacter).
  */
 UCLASS()
@@ -27,7 +29,10 @@ public:
 	AKubeCraftCharacter();
 
 protected:
-	/** Moves the input mapping context from the previous player (if any) to the one now controlling this pawn. */
+	/**
+	 * Moves the input mapping context from the previous player (if any) to the one now controlling this pawn,
+	 * and stops mining, because the old player's button release can no longer arrive.
+	 */
 	virtual void NotifyControllerChanged() override;
 
 	/** Binds Move, Look and Jump to this character, and Mine and Place to its block components. */
@@ -42,6 +47,10 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "KubeCraft|Camera")
 	TObjectPtr<UCameraComponent> Camera;
+
+	/** Which block is in the middle of the screen; shared by mining and placing. */
+	UPROPERTY(VisibleAnywhere, Category = "KubeCraft|Blocks")
+	TObjectPtr<ULookTargetComponent> LookTargetComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = "KubeCraft|Blocks")
 	TObjectPtr<UMiningComponent> MiningComponent;

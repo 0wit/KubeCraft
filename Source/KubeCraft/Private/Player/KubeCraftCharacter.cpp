@@ -9,6 +9,7 @@
 #include "InputActionValue.h"
 #include "KubeCraft.h"
 #include "PhysicsEngine/PhysicsSettings.h"
+#include "Player/LookTargetComponent.h"
 #include "Player/MiningComponent.h"
 #include "Player/PlacingComponent.h"
 #include "World/VoxelTypes.h"
@@ -54,12 +55,16 @@ AKubeCraftCharacter::AKubeCraftCharacter()
 	Camera->SetRelativeLocation(FVector(0.f, 0.f, EyeHeightInBlocks * BlockSize - CapsuleHalfHeight));
 	Camera->bUsePawnControlRotation = true;
 
+	LookTargetComponent = CreateDefaultSubobject<ULookTargetComponent>(TEXT("LookTarget"));
 	MiningComponent = CreateDefaultSubobject<UMiningComponent>(TEXT("Mining"));
 	PlacingComponent = CreateDefaultSubobject<UPlacingComponent>(TEXT("Placing"));
 }
 
 void AKubeCraftCharacter::NotifyControllerChanged()
 {
+	// A held mine button belonged to the old controller; its release will never reach this pawn.
+	MiningComponent->StopMining();
+
 	// Super overwrites PreviousController, so take this pawn's keys away from the old player first.
 	if (UEnhancedInputLocalPlayerSubsystem* OldInput = GetInputSubsystem(PreviousController))
 	{
@@ -91,20 +96,37 @@ void AKubeCraftCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 		UE_LOG(LogKubeCraft, Error, TEXT("%s requires the Enhanced Input component."), *GetName());
 		return;
 	}
-	if (!MoveAction || !LookAction || !JumpAction || !MineAction || !PlaceAction)
+	// Walking, looking and jumping are needed to play at all: bind all three or none.
+	if (MoveAction && LookAction && JumpAction)
 	{
-		UE_LOG(LogKubeCraft, Error, TEXT("%s: Move, Look, Jump, Mine and Place input actions must all be assigned."),
-			*GetName());
-		return;
+		EnhancedInput->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AKubeCraftCharacter::Move);
+		EnhancedInput->BindAction(LookAction, ETriggerEvent::Triggered, this, &AKubeCraftCharacter::Look);
+		EnhancedInput->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+		EnhancedInput->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+	}
+	else
+	{
+		UE_LOG(LogKubeCraft, Error, TEXT("%s: Move, Look and Jump input actions must all be assigned."), *GetName());
 	}
 
-	EnhancedInput->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AKubeCraftCharacter::Move);
-	EnhancedInput->BindAction(LookAction, ETriggerEvent::Triggered, this, &AKubeCraftCharacter::Look);
-	EnhancedInput->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
-	EnhancedInput->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
-	EnhancedInput->BindAction(MineAction, ETriggerEvent::Started, MiningComponent.Get(), &UMiningComponent::StartMining);
-	EnhancedInput->BindAction(MineAction, ETriggerEvent::Completed, MiningComponent.Get(), &UMiningComponent::StopMining);
-	EnhancedInput->BindAction(PlaceAction, ETriggerEvent::Started, PlacingComponent.Get(), &UPlacingComponent::Place);
+	// Mining and placing are extras on top: a missing action turns off only that feature.
+	if (MineAction)
+	{
+		EnhancedInput->BindAction(MineAction, ETriggerEvent::Started, MiningComponent.Get(), &UMiningComponent::StartMining);
+		EnhancedInput->BindAction(MineAction, ETriggerEvent::Completed, MiningComponent.Get(), &UMiningComponent::StopMining);
+	}
+	else
+	{
+		UE_LOG(LogKubeCraft, Warning, TEXT("%s: MineAction is not assigned; mining is off."), *GetName());
+	}
+	if (PlaceAction)
+	{
+		EnhancedInput->BindAction(PlaceAction, ETriggerEvent::Started, PlacingComponent.Get(), &UPlacingComponent::Place);
+	}
+	else
+	{
+		UE_LOG(LogKubeCraft, Warning, TEXT("%s: PlaceAction is not assigned; placing is off."), *GetName());
+	}
 }
 
 void AKubeCraftCharacter::Move(const FInputActionValue& Value)

@@ -53,8 +53,9 @@ public:
 #endif
 
 protected:
-	/** The automation test fills Blocks and HeightBands directly; in the game they are only edited in the asset. */
+	/** The automation tests fill Blocks and HeightBands directly; in the game they are only edited in the asset. */
 	friend class FBlockCatalogHeightBandsTest;
+	friend struct FTestVoxelWorld;
 
 	/**
 	 * Every block type in the game. A block's id is its position in this list + 1 (0 is Air).
