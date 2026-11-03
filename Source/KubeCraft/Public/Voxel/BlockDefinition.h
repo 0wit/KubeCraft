@@ -17,6 +17,7 @@ class KUBECRAFT_API UBlockDefinition : public UPrimaryDataAsset
 	GENERATED_BODY()
 
 public:
+	/** Name shown to the player, e.g. in a future inventory or hotbar. Not used yet. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "KubeCraft|Block")
 	FText DisplayName;
 
@@ -24,11 +25,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "KubeCraft|Block")
 	TObjectPtr<UMaterialInterface> Material = nullptr;
 
-	/** How long the mine button must be held to break one cube of this type. */
+	/** How long the mine button must be held to break one cube of this type. Not used until mining exists. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "KubeCraft|Block", meta = (ClampMin = "0.05", Units = "s"))
 	float MineTime = 1.f;
 
-	/** False for blocks the player can never remove. */
+	/** False for blocks the player can never remove. Not used until mining exists. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "KubeCraft|Block")
 	bool bBreakable = true;
 };

@@ -17,9 +17,6 @@ namespace
 		FIntVector(0, 1, 0), FIntVector(0, -1, 0),
 		FIntVector(0, 0, 1), FIntVector(0, 0, -1),
 	};
-
-	/** Height of the slab made by FillFlatForTesting, in blocks. */
-	constexpr int32 FlatTestHeight = 6;
 }
 
 AVoxelChunk::AVoxelChunk()
@@ -37,29 +34,42 @@ FBlockId AVoxelChunk::GetBlock(const FIntVector& Local) const
 
 void AVoxelChunk::SetBlock(const FIntVector& Local, FBlockId Id)
 {
-	if (ensureMsgf(IsInsideChunk(Local), TEXT("SetBlock outside chunk: %s"), *Local.ToString()))
+	if (!ensureMsgf(IsInsideChunk(Local), TEXT("SetBlock outside chunk: %s"), *Local.ToString()))
 	{
-		Blocks[LocalToIndex(Local)] = Id;
+		return;
 	}
+	// Every stored id must be drawable: an unknown id would be solid for its neighbors but invisible.
+	if (!ensureMsgf(IsKnownBlock(Id), TEXT("SetBlock with block id %d, which is not in the catalog"), Id))
+	{
+		return;
+	}
+	Blocks[LocalToIndex(Local)] = Id;
 }
 
 void AVoxelChunk::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (!Catalog || !BlockMesh)
+	{
+		UE_LOG(LogKubeCraft, Error, TEXT("%s: Catalog and BlockMesh must both be assigned; the chunk stays empty."),
+			*GetName());
+		return;
+	}
+
 	FillFlatForTesting();
 	RebuildMesh();
 }
 
+bool AVoxelChunk::IsKnownBlock(FBlockId Id) const
+{
+	return Id == AirBlockId || (Catalog && Catalog->GetDefinition(Id));
+}
+
 void AVoxelChunk::FillFlatForTesting()
 {
-	if (!Catalog)
-	{
-		UE_LOG(LogKubeCraft, Error, TEXT("%s: no block catalog assigned."), *GetName());
-		return;
-	}
-
-	for (int32 Z = 0; Z < FlatTestHeight; ++Z)
+	const int32 Height = FMath::Clamp(FlatTestHeight, 0, ChunkHeight);
+	for (int32 Z = 0; Z < Height; ++Z)
 	{
 		const FBlockId Id = Catalog->GetIdForHeight(Z);
 		for (int32 Y = 0; Y < ChunkSize; ++Y)
@@ -140,11 +150,12 @@ UInstancedStaticMeshComponent* AVoxelChunk::FindOrCreateMesh(FBlockId Id)
 		return *Existing;
 	}
 
+	// SetBlock only stores known ids and BeginPlay checks BlockMesh, so this can only fail after a code
+	// change. ensure() reports it once instead of on every rebuild.
 	const UBlockDefinition* Definition = Catalog ? Catalog->GetDefinition(Id) : nullptr;
-	if (!Definition || !BlockMesh)
+	if (!ensureMsgf(Definition && BlockMesh, TEXT("%s: cannot draw block id %d (not in the catalog, or no block mesh)"),
+		*GetName(), Id))
 	{
-		UE_LOG(LogKubeCraft, Warning, TEXT("%s: cannot draw block id %d (not in the catalog, or no block mesh)."),
-			*GetName(), Id);
 		return nullptr;
 	}
 

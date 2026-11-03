@@ -20,16 +20,21 @@ class KUBECRAFT_API AKubeCraftCharacter : public ACharacter
 	GENERATED_BODY()
 
 public:
+	/** Sets the default capsule size, jump strength and camera height, all derived from the block size. */
 	AKubeCraftCharacter();
 
 protected:
-	/** Adds the input mapping context once a local player controls this pawn. */
+	/** Moves the input mapping context from the previous player (if any) to the one now controlling this pawn. */
 	virtual void NotifyControllerChanged() override;
 
+	/** Binds the Move, Look and Jump actions to this character. */
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 private:
+	/** Walks relative to where the character faces (2D input: X = right, Y = forward). */
 	void Move(const FInputActionValue& Value);
+
+	/** Turns the view (2D input: X = yaw, Y = pitch). */
 	void Look(const FInputActionValue& Value);
 
 	UPROPERTY(VisibleAnywhere, Category = "KubeCraft|Camera")

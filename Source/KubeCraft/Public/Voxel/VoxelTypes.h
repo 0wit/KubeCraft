@@ -8,6 +8,7 @@
  */
 using FBlockId = uint8;
 
+/** The id of an empty cell: never drawn, never collides, not listed in the catalog. */
 inline constexpr FBlockId AirBlockId = 0;
 
 /** Highest id a block type can have, so the catalog supports at most this many block types. */
@@ -39,12 +40,19 @@ namespace KubeCraft::Voxel
 	/** Number of blocks along Z in one chunk. This is also the world's height limit. */
 	inline constexpr int32 ChunkHeight = 64;
 
+	/** Number of cells in one chunk, i.e. the length of its flat block array. */
 	inline constexpr int32 BlocksPerChunk = ChunkSize * ChunkSize * ChunkHeight;
 
-	/** Integer division that rounds towards negative infinity (-1 / 16 == -1, not 0). */
+	/**
+	 * Integer division that rounds towards negative infinity (-1 / 16 == -1, not 0).
+	 * Divisor must be positive - it is always a grid size here.
+	 */
 	inline int32 FloorDiv(int32 Value, int32 Divisor)
 	{
-		return (Value >= 0) ? Value / Divisor : (Value - Divisor + 1) / Divisor;
+		check(Divisor > 0);
+		// C++ rounds towards zero. A negative remainder means it rounded up, so step one down.
+		const int32 Quotient = Value / Divisor;
+		return (Value % Divisor < 0) ? Quotient - 1 : Quotient;
 	}
 
 	/** Block that contains the given world position. */

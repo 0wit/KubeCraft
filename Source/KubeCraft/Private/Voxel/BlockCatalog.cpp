@@ -68,6 +68,11 @@ EDataValidationResult UBlockCatalog::IsDataValid(FDataValidationContext& Context
 		{
 			AddError(FText::Format(LOCTEXT("BandBlockNotListed", "HeightBands[{0}] uses a block that is not in Blocks."), Index));
 		}
+		if (Band.MaxZ <= 0 || Band.MaxZ > KubeCraft::Voxel::ChunkHeight)
+		{
+			AddError(FText::Format(LOCTEXT("BandOutsideWorld", "HeightBands[{0}].MaxZ must be between 1 and {1} (the world height)."),
+				Index, KubeCraft::Voxel::ChunkHeight));
+		}
 		if (Index > 0 && Band.MaxZ <= HeightBands[Index - 1].MaxZ)
 		{
 			AddError(FText::Format(LOCTEXT("BandsNotSorted", "HeightBands[{0}] must have a higher MaxZ than the band before it."), Index));

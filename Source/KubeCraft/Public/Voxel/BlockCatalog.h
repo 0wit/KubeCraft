@@ -17,6 +17,7 @@ struct FBlockHeightBand
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "KubeCraft|Blocks")
 	int32 MaxZ = 0;
 
+	/** Block type used inside this band. Must also be listed in the catalog's Blocks. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "KubeCraft|Blocks")
 	TObjectPtr<UBlockDefinition> Block = nullptr;
 };

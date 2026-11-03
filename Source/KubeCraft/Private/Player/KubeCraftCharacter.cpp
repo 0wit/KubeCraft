@@ -8,53 +8,72 @@
 #include "GameFramework/PlayerController.h"
 #include "InputActionValue.h"
 #include "KubeCraft.h"
+#include "PhysicsEngine/PhysicsSettings.h"
+#include "Voxel/VoxelTypes.h"
 
 namespace
 {
-	// Player is 0.6 x 1.8 blocks, like in Minecraft: fits through a 1-wide, 2-high gap.
-	constexpr float CapsuleRadius = 30.f;
-	constexpr float CapsuleHalfHeight = 90.f;
+	// Default size in blocks, like in Minecraft: 0.6 wide and 1.8 tall fits through a 1-wide, 2-high gap.
+	// These only seed the components; BP_KubeCraftCharacter can still override them on the components.
+	constexpr float PlayerWidthInBlocks = 0.6f;
+	constexpr float PlayerHeightInBlocks = 1.8f;
+	constexpr float EyeHeightInBlocks = 1.6f;	// Measured from the feet.
 
-	/** Camera height above the capsule center (eyes at ~1.6 m). */
-	constexpr float EyeHeightAboveCenter = 70.f;
+	/** Peak of a jump. A bit more than one block, so the player can step up onto the next level. */
+	constexpr float JumpHeightInBlocks = 1.25f;
 
-	/** Enough to jump onto a block that is one level higher (peak ~1.27 m with default gravity). */
-	constexpr float JumpZVelocity = 500.f;
+	/** Enhanced Input subsystem of the local player behind a controller, or null for AI / no controller. */
+	UEnhancedInputLocalPlayerSubsystem* GetInputSubsystem(const AController* Controller)
+	{
+		const APlayerController* PlayerController = Cast<APlayerController>(Controller);
+		return PlayerController
+			? ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer())
+			: nullptr;
+	}
 }
 
 AKubeCraftCharacter::AKubeCraftCharacter()
 {
+	using KubeCraft::Voxel::BlockSize;
+
 	PrimaryActorTick.bCanEverTick = false;
 
+	const float CapsuleRadius = 0.5f * PlayerWidthInBlocks * BlockSize;
+	const float CapsuleHalfHeight = 0.5f * PlayerHeightInBlocks * BlockSize;
 	GetCapsuleComponent()->InitCapsuleSize(CapsuleRadius, CapsuleHalfHeight);
-	GetCharacterMovement()->JumpZVelocity = JumpZVelocity;
 
+	// Launch speed that reaches the jump height: v = sqrt(2 * g * h).
+	const float Gravity = FMath::Abs(UPhysicsSettings::Get()->DefaultGravityZ);
+	GetCharacterMovement()->JumpZVelocity = FMath::Sqrt(2.f * Gravity * JumpHeightInBlocks * BlockSize);
+
+	// The camera is attached to the capsule center, so the eye height is measured from there.
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(GetCapsuleComponent());
-	Camera->SetRelativeLocation(FVector(0.f, 0.f, EyeHeightAboveCenter));
+	Camera->SetRelativeLocation(FVector(0.f, 0.f, EyeHeightInBlocks * BlockSize - CapsuleHalfHeight));
 	Camera->bUsePawnControlRotation = true;
 }
 
 void AKubeCraftCharacter::NotifyControllerChanged()
 {
+	// Super overwrites PreviousController, so take this pawn's keys away from the old player first.
+	if (UEnhancedInputLocalPlayerSubsystem* OldInput = GetInputSubsystem(PreviousController))
+	{
+		OldInput->RemoveMappingContext(DefaultMappingContext);
+	}
+
 	Super::NotifyControllerChanged();
 
-	const APlayerController* PlayerController = Cast<APlayerController>(GetController());
-	if (!PlayerController)
+	UEnhancedInputLocalPlayerSubsystem* NewInput = GetInputSubsystem(GetController());
+	if (!NewInput)
 	{
-		return; // Not controlled by a player (e.g. just unpossessed): nothing to map.
+		return; // Not controlled by a local player (e.g. just unpossessed): nothing to map.
 	}
 	if (!DefaultMappingContext)
 	{
 		UE_LOG(LogKubeCraft, Error, TEXT("%s: DefaultMappingContext is not assigned."), *GetName());
 		return;
 	}
-
-	if (UEnhancedInputLocalPlayerSubsystem* InputSubsystem =
-		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
-	{
-		InputSubsystem->AddMappingContext(DefaultMappingContext, /*Priority*/ 0);
-	}
+	NewInput->AddMappingContext(DefaultMappingContext, /*Priority*/ 0);
 }
 
 void AKubeCraftCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

@@ -20,7 +20,7 @@ Player ──mine/place──▶ World 🔜 ──▶ Chunk, Chunk, Chunk ...
 | Piece | Job | |
 |---|---|---|
 | `VoxelTypes.h` | "A cube is a number" + converts positions (cm ↔ cube ↔ chunk) | ✅ |
-| `UBlockDefinition` | One block type: material, mining time, breakable | ✅ |
+| `UBlockDefinition` | One block type: material ✅, mining time + breakable (read by mining 🔜) | ✅ |
 | `UBlockCatalog` | List of block types + which block goes at which height | ✅ |
 | `AVoxelChunk` | One piece of the world: stores its numbers, draws visible cubes | ✅ ⚠️ flat test slab |
 | `AKubeCraftCharacter` | Player: camera, walk, look, jump | ✅ |
@@ -59,6 +59,12 @@ Side view of a tiny chunk:
 
 - `GetBlock` / `SetBlock` read and write a number.
 - `RebuildMesh` draws only cubes that touch air, one instanced mesh per block type.
+- `SetBlock` refuses numbers that aren't in the catalog – otherwise you'd get an invisible solid cube.
+
+Known limits ⚠️:
+- One changed cube redraws the **whole chunk**. Fine for now; made smarter if mining stutters 🔜.
+- A chunk thinks everything beyond its sides is air, so its outer walls are always drawn.
+  Fixed once the world can tell a chunk about its neighbors 🔜.
 
 ## Blocks and height
 
@@ -79,7 +85,9 @@ Blueprints hold only settings. Logic is C++.
 ## How do I…
 
 - **Add a block:** new `BlockDefinition` asset + material, add it at the end of `DA_BlockCatalog`.
-- **Change mining time:** `MineTime` in the block asset.
+- **Change mining time:** `MineTime` in the block asset 🔜 (no mining yet).
+- **Change player size / jump:** defaults are in blocks at the top of `KubeCraftCharacter.cpp`;
+  per-Blueprint overrides go on the capsule, camera and movement components of `BP_KubeCraftCharacter`.
 - **Change keys:** `IMC_Default`.
 - **Run the tests:** Tools → Session Frontend → Automation → tick `KubeCraft` → Start.
   `KubeCraft.Voxel.Coordinates` checks the position conversions (incl. negative positions).

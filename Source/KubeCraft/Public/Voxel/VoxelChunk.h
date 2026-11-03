@@ -26,12 +26,16 @@ class KUBECRAFT_API AVoxelChunk : public AActor
 	GENERATED_BODY()
 
 public:
+	/** Creates an empty (all Air) chunk with a root component for the instanced meshes. */
 	AVoxelChunk();
 
 	/** Block at a local coordinate. Returns Air for coordinates outside the chunk. */
 	FBlockId GetBlock(const FIntVector& Local) const;
 
-	/** Changes one block. Does not update the visuals; call RebuildMesh() after a batch of changes. */
+	/**
+	 * Changes one block. Ignored (with an ensure) for coordinates outside the chunk and ids not in the catalog.
+	 * Does not update the visuals; call RebuildMesh() after a batch of changes.
+	 */
 	void SetBlock(const FIntVector& Local, FBlockId Id);
 
 	/** Recreates all cube instances from the block array. */
@@ -43,6 +47,9 @@ protected:
 private:
 	/** Temporary content until the terrain generator exists: a flat slab, block types taken from the height bands. */
 	void FillFlatForTesting();
+
+	/** True for Air and for ids that have a definition in the catalog - the only ids a chunk may store. */
+	bool IsKnownBlock(FBlockId Id) const;
 
 	/** True if a face of this block can be seen, i.e. at least one neighbor is not solid. */
 	bool IsExposed(const FIntVector& Local) const;
@@ -60,6 +67,10 @@ private:
 	/** Mesh drawn for every cube; must be BlockSize wide with its pivot in the center. */
 	UPROPERTY(EditAnywhere, Category = "KubeCraft|Chunk")
 	TObjectPtr<UStaticMesh> BlockMesh;
+
+	/** Height in blocks of the temporary test slab (see FillFlatForTesting); capped at ChunkHeight. */
+	UPROPERTY(EditAnywhere, Category = "KubeCraft|Chunk", meta = (ClampMin = "0"))
+	int32 FlatTestHeight = 6;
 
 	/** One mesh component per block type present in this chunk. Key is an FBlockId (UHT needs the raw uint8). */
 	UPROPERTY(Transient)

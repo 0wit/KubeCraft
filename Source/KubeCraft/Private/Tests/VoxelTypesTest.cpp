@@ -20,6 +20,10 @@ bool FVoxelCoordinatesTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("FloorDiv(-1, 16)"), FloorDiv(-1, 16), -1);
 	TestEqual(TEXT("FloorDiv(-16, 16)"), FloorDiv(-16, 16), -1);
 	TestEqual(TEXT("FloorDiv(-17, 16)"), FloorDiv(-17, 16), -2);
+	// Extremes must not overflow.
+	TestEqual(TEXT("FloorDiv(MIN_int32, 16)"), FloorDiv(MIN_int32, 16), MIN_int32 / 16);
+	TestEqual(TEXT("FloorDiv(MIN_int32 + 1, 16)"), FloorDiv(MIN_int32 + 1, 16), MIN_int32 / 16);
+	TestEqual(TEXT("FloorDiv(MAX_int32, 16)"), FloorDiv(MAX_int32, 16), MAX_int32 / 16);
 
 	// Block edges: [0, 100) cm is block 0, -0.1 cm is already block -1.
 	TestEqual(TEXT("Just below 0"), WorldToBlock(FVector(-0.1, 0, 0)), FIntVector(-1, 0, 0));
