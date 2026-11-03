@@ -42,8 +42,12 @@ public:
 	UStaticMesh* GetBlockMesh() const { return BlockMesh; }
 
 private:
-	/** Creates one chunk and fills it with blocks from the generator. Does not draw it yet. */
-	void SpawnChunk(const FIntPoint& ChunkCoord, const FTerrainGenerator& Generator);
+	/**
+	 * Creates one chunk and fills it with blocks from the generator. Does not draw it yet.
+	 * BlockIdPerHeight holds the block type for each height Z (ChunkHeight entries), taken from the catalog.
+	 */
+	void SpawnChunk(const FIntPoint& ChunkCoord, const FTerrainGenerator& Generator,
+		const TArray<FBlockId>& BlockIdPerHeight);
 
 	/** All block types and the height rule. */
 	UPROPERTY(EditAnywhere, Category = "KubeCraft|World")

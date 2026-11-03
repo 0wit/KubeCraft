@@ -116,6 +116,11 @@ bool AVoxelChunk::IsSolidNeighbor(const FIntVector& Local) const
 	{
 		return true;
 	}
+	// Above the height limit there is only Air, so the top faces of the highest layer are always drawn.
+	if (Local.Z >= ChunkHeight)
+	{
+		return false;
+	}
 	if (IsInsideChunk(Local))
 	{
 		return GetBlock(Local) != AirBlockId;

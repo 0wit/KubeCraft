@@ -46,6 +46,10 @@ bool FVoxelCoordinatesTest::RunTest(const FString& Parameters)
 		TestEqual(*FString::Printf(TEXT("Center round trip %s"), *B.ToString()), WorldToBlock(BlockToWorldCenter(B)), B);
 	}
 
+	// The top face is one full block above the corner and centered in X/Y, also for negative blocks.
+	TestEqual(TEXT("Top center of (0, 0, 0)"), BlockToWorldTopCenter(FIntVector(0, 0, 0)), FVector(50, 50, 100));
+	TestEqual(TEXT("Top center of (-1, 2, -1)"), BlockToWorldTopCenter(FIntVector(-1, 2, -1)), FVector(-50, 250, 0));
+
 	// Chunk bounds and the ends of the flat array.
 	const FIntVector LastLocal(ChunkSize - 1, ChunkSize - 1, ChunkHeight - 1);
 	TestTrue(TEXT("Last corner inside"), IsInsideChunk(LastLocal));

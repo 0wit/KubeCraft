@@ -76,6 +76,12 @@ namespace KubeCraft::Voxel
 		return (FVector(Block) + FVector(0.5)) * BlockSize;
 	}
 
+	/** World position of the middle of a block's top face, e.g. where a player standing on it has their feet. */
+	inline FVector BlockToWorldTopCenter(const FIntVector& Block)
+	{
+		return (FVector(Block) + FVector(0.5, 0.5, 1.0)) * BlockSize;
+	}
+
 	/**
 	 * Center of a block relative to its chunk actor, which sits at the chunk's first block.
 	 * Same math as BlockToWorldCenter, because the local grid starts at the actor's origin.
