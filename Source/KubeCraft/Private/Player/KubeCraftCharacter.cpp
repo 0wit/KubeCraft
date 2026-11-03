@@ -9,7 +9,9 @@
 #include "InputActionValue.h"
 #include "KubeCraft.h"
 #include "PhysicsEngine/PhysicsSettings.h"
-#include "Voxel/VoxelTypes.h"
+#include "Player/MiningComponent.h"
+#include "Player/PlacingComponent.h"
+#include "World/VoxelTypes.h"
 
 namespace
 {
@@ -51,6 +53,9 @@ AKubeCraftCharacter::AKubeCraftCharacter()
 	Camera->SetupAttachment(GetCapsuleComponent());
 	Camera->SetRelativeLocation(FVector(0.f, 0.f, EyeHeightInBlocks * BlockSize - CapsuleHalfHeight));
 	Camera->bUsePawnControlRotation = true;
+
+	MiningComponent = CreateDefaultSubobject<UMiningComponent>(TEXT("Mining"));
+	PlacingComponent = CreateDefaultSubobject<UPlacingComponent>(TEXT("Placing"));
 }
 
 void AKubeCraftCharacter::NotifyControllerChanged()
@@ -86,9 +91,10 @@ void AKubeCraftCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 		UE_LOG(LogKubeCraft, Error, TEXT("%s requires the Enhanced Input component."), *GetName());
 		return;
 	}
-	if (!MoveAction || !LookAction || !JumpAction)
+	if (!MoveAction || !LookAction || !JumpAction || !MineAction || !PlaceAction)
 	{
-		UE_LOG(LogKubeCraft, Error, TEXT("%s: Move, Look and Jump input actions must all be assigned."), *GetName());
+		UE_LOG(LogKubeCraft, Error, TEXT("%s: Move, Look, Jump, Mine and Place input actions must all be assigned."),
+			*GetName());
 		return;
 	}
 
@@ -96,6 +102,9 @@ void AKubeCraftCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 	EnhancedInput->BindAction(LookAction, ETriggerEvent::Triggered, this, &AKubeCraftCharacter::Look);
 	EnhancedInput->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 	EnhancedInput->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+	EnhancedInput->BindAction(MineAction, ETriggerEvent::Started, MiningComponent.Get(), &UMiningComponent::StartMining);
+	EnhancedInput->BindAction(MineAction, ETriggerEvent::Completed, MiningComponent.Get(), &UMiningComponent::StopMining);
+	EnhancedInput->BindAction(PlaceAction, ETriggerEvent::Started, PlacingComponent.Get(), &UPlacingComponent::Place);
 }
 
 void AKubeCraftCharacter::Move(const FInputActionValue& Value)

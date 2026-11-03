@@ -1,7 +1,7 @@
-#include "Voxel/BlockCatalog.h"
+#include "Blocks/BlockCatalog.h"
 
+#include "Blocks/BlockDefinition.h"
 #include "Misc/DataValidation.h"
-#include "Voxel/BlockDefinition.h"
 
 #define LOCTEXT_NAMESPACE "BlockCatalog"
 

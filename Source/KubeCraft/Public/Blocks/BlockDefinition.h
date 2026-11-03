@@ -25,11 +25,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "KubeCraft|Block")
 	TObjectPtr<UMaterialInterface> Material = nullptr;
 
-	/** How long the mine button must be held to break one cube of this type. Not used until mining exists. */
+	/** How long the mine button must be held to break one cube of this type. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "KubeCraft|Block", meta = (ClampMin = "0.05", Units = "s"))
 	float MineTime = 1.f;
 
-	/** False for blocks the player can never remove. Not used until mining exists. */
+	/** False for blocks the player can never remove, such as the bedrock that forms the floor of the world. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "KubeCraft|Block")
 	bool bBreakable = true;
 };

@@ -2,17 +2,19 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Voxel/TerrainGenerator.h"
-#include "Voxel/VoxelTypes.h"
+#include "Terrain/TerrainGenerator.h"
+#include "World/VoxelTypes.h"
 #include "VoxelWorld.generated.h"
 
 class AVoxelChunk;
 class UBlockCatalog;
+class UBlockDefinition;
 class UStaticMesh;
 
 /**
  * The whole block world: owns all chunks and answers questions about blocks in world block coordinates.
  * Generate() picks a seed, creates a square of chunks centered on block (0, 0) and fills them with terrain.
+ * After that, MineBlock() / PlaceBlock() are the only way blocks change; they ask FBlockRules first.
  *
  * Chunks are placed in absolute world space (block (0, 0, 0) is always at the world origin),
  * so moving this actor in the level does not move the terrain.
@@ -32,8 +34,23 @@ public:
 	/** Block at a world block coordinate. Air outside the generated area and above or below the world. */
 	FBlockId GetBlock(const FIntVector& Block) const;
 
+	/** Block type at a world block coordinate, or null for Air. */
+	const UBlockDefinition* GetBlockDefinition(const FIntVector& Block) const;
+
 	/** World position (cm) on top of the highest solid block in a column, i.e. where a player can stand. */
 	FVector GetSurfaceLocation(const FIntPoint& Column) const;
+
+	/** True if the block lies between the floor and the ceiling of a generated chunk, i.e. it can hold a block. */
+	bool IsInsideWorld(const FIntVector& Block) const;
+
+	/** Removes a block if FBlockRules allows it and redraws what changed. Returns true if the block was removed. */
+	bool MineBlock(const FIntVector& Block);
+
+	/**
+	 * Puts a block here if FBlockRules allows it and redraws what changed. Returns true if a block was placed.
+	 * The type comes from the height bands, like in the generated terrain.
+	 */
+	bool PlaceBlock(const FIntVector& Block);
 
 	/** All block types and the height rule; shared by every chunk. */
 	const UBlockCatalog* GetCatalog() const { return Catalog; }
@@ -48,6 +65,15 @@ private:
 	 */
 	void SpawnChunk(const FIntPoint& ChunkCoord, const FTerrainGenerator& Generator,
 		const TArray<FBlockId>& BlockIdPerHeight);
+
+	/** Chunk at a chunk coordinate, or null outside the generated area. */
+	AVoxelChunk* FindChunk(const FIntPoint& ChunkCoord) const;
+
+	/**
+	 * Changes one block and redraws its chunk. A block on a chunk border also touches blocks of the
+	 * neighbor chunk, whose faces may appear or disappear, so that chunk is redrawn too.
+	 */
+	void SetBlockAndRedraw(const FIntVector& Block, FBlockId Id);
 
 	/** All block types and the height rule. */
 	UPROPERTY(EditAnywhere, Category = "KubeCraft|World")

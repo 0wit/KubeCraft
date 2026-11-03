@@ -1,6 +1,6 @@
 #include "Misc/AutomationTest.h"
-#include "Voxel/BlockCatalog.h"
-#include "Voxel/BlockDefinition.h"
+#include "Blocks/BlockCatalog.h"
+#include "Blocks/BlockDefinition.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -8,7 +8,7 @@
  * Checks how the catalog turns ids into definitions and heights into block types,
  * which terrain generation (and later placing) relies on. Uses a catalog built in memory, not DA_BlockCatalog.
  */
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBlockCatalogHeightBandsTest, "KubeCraft.Voxel.HeightBands",
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBlockCatalogHeightBandsTest, "KubeCraft.Blocks.HeightBands",
 	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
 
 bool FBlockCatalogHeightBandsTest::RunTest(const FString& Parameters)

@@ -83,6 +83,21 @@ namespace KubeCraft::Voxel
 	}
 
 	/**
+	 * Block whose face a trace hit (ImpactNormal points out of that face).
+	 * The hit point lies exactly on the border between two blocks, so step half a block into the hit cube first.
+	 */
+	inline FIntVector HitToBlock(const FVector& ImpactPoint, const FVector& ImpactNormal)
+	{
+		return WorldToBlock(ImpactPoint - ImpactNormal * (0.5f * BlockSize));
+	}
+
+	/** Empty cell in front of the face a trace hit, i.e. where a block placed against that face goes. */
+	inline FIntVector HitToFaceNeighbor(const FVector& ImpactPoint, const FVector& ImpactNormal)
+	{
+		return WorldToBlock(ImpactPoint + ImpactNormal * (0.5f * BlockSize));
+	}
+
+	/**
 	 * Center of a block relative to its chunk actor, which sits at the chunk's first block.
 	 * Same math as BlockToWorldCenter, because the local grid starts at the actor's origin.
 	 */

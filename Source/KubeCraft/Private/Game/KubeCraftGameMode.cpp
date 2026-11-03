@@ -5,7 +5,7 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "KubeCraft.h"
-#include "Voxel/VoxelWorld.h"
+#include "World/VoxelWorld.h"
 
 void AKubeCraftGameMode::StartPlay()
 {

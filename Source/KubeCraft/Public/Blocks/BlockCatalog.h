@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "Voxel/VoxelTypes.h"
+#include "World/VoxelTypes.h"
 #include "BlockCatalog.generated.h"
 
 class UBlockDefinition;
@@ -25,9 +25,9 @@ struct FBlockHeightBand
 /**
  * All block types of the game and the height rule, edited as one data asset (DA_BlockCatalog).
  *
- *   Blocks:       [DA_Block_Stone, DA_Block_Grass, DA_Block_Snow]
- *                    id 1            id 2            id 3          (id 0 = Air)
- *   HeightBands:  [{MaxZ 3: Stone}, {MaxZ 5: Grass}, {MaxZ 64: Snow}]
+ *   Blocks:       [DA_Block_Stone, DA_Block_Grass, DA_Block_Snow, DA_Block_Bedrock]
+ *                    id 1            id 2            id 3          id 4             (id 0 = Air)
+ *   HeightBands:  [{MaxZ 1: Bedrock}, {MaxZ 16: Stone}, {MaxZ 26: Grass}, {MaxZ 64: Snow}]
  *
  * Chunks store only the id (one byte per cube); this catalog turns an id back into its definition.
  * The height bands decide the block type by height, both for terrain generation and for placing.

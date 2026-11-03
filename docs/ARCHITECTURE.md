@@ -5,31 +5,40 @@
 ## The idea
 
 - The world is made of cubes.
-- A cube is **just a number**: 0 = air, 1 = stone, 2 = grass, 3 = snow.
+- A cube is **just a number**: 0 = air, 1 = stone, 2 = grass, 3 = snow, 4 = bedrock.
 - Cubes are grouped in **chunks**. One chunk = 16 × 16 cubes, 64 high.
 - What a number looks like is set in **data assets** (editor files).
 
 ```
 Game mode ──1. build──▶ World ──▶ Chunk, Chunk, Chunk ...   (8 × 8 chunks)
-    │                    │  │       │
-    │                    │  │       └─ "what is 2?" ──▶ Block catalog ──▶ Stone, Grass, Snow
-    │                    │  └─ "how high is the ground here?" ──▶ Terrain generator
-    └──2. place on top──▶ Player ──mine/place 🔜──▶ World
+    │                    │ │ │      │
+    │                    │ │ │      ├─ "what is 2?" ──▶ Block catalog ──▶ Stone, Grass, Snow, Bedrock
+    │                    │ │ │      └─ Chunk mesh: draws the cubes
+    │                    │ │ └─ "how high is the ground here?" ──▶ Terrain generator
+    │                    │ └─ "may I change this cube?" ──▶ Block rules
+    │                    │
+    └──2. place on top──▶ Player ──▶ Mining / Placing ──mine/place──▶ World
 ```
 
 ## The pieces
 
-| Piece | Job | |
-|---|---|---|
-| `VoxelTypes.h` | Converts positions: cm ↔ cube ↔ chunk | ✅ |
-| `UBlockDefinition` | One block type: its material. Mining time 🔜 | ✅ |
-| `UBlockCatalog` | List of block types. Says which block goes at which height | ✅ |
-| `FTerrainGenerator` | Says how high the ground is at one spot | ✅ |
-| `AVoxelWorld` | Owns all chunks. Fills them. Mine/place 🔜 | ✅ |
-| `AVoxelChunk` | One piece of the world. Keeps its numbers, draws its cubes | ✅ |
-| `AKubeCraftGameMode` | Builds the world, then puts the player on it | ✅ |
-| `AKubeCraftCharacter` | The player: walk, look, jump | ✅ |
-| `UBlockInteractionComponent` | Hold to mine, press to place | 🔜 |
+Grouped by folder. Each folder is one **topic**, so a change usually stays in one folder.
+
+| Folder | Piece | Job | |
+|---|---|---|---|
+| `Blocks/` – what a block is, what you may do with it | `UBlockDefinition` | One block type: material, mining time, breakable or not | ✅ |
+| | `UBlockCatalog` | List of block types. Says which block goes at which height | ✅ |
+| | `FBlockRules` | Says if a cube may be mined, or placed somewhere | ✅ |
+| `World/` – where blocks are, how they're drawn | `VoxelTypes.h` | Converts positions: cm ↔ cube ↔ chunk | ✅ |
+| | `AVoxelWorld` | Owns all chunks. Fills them. Changes cubes and redraws | ✅ |
+| | `AVoxelChunk` | One piece of the world. Keeps its numbers | ✅ |
+| | `UChunkMeshComponent` | Draws one chunk's cubes | ✅ |
+| `Terrain/` – how the hills are made | `FTerrainGenerator` | Says how high the ground is at one spot | ✅ |
+| `Player/` – the player, and what they do with blocks | `AKubeCraftCharacter` | Walk, look, jump. Passes the mine/place buttons on | ✅ |
+| | `FLookTarget` (`LookTarget.h`) | Which cube am I looking at? | ✅ |
+| | `UMiningComponent` | Hold the button → cube breaks after its mining time | ✅ |
+| | `UPlacingComponent` | Press the button → a cube appears on the face you look at | ✅ |
+| `Game/` – start order of a game | `AKubeCraftGameMode` | Builds the world, then puts the player on it | ✅ |
 
 ## Starting a game
 
@@ -59,11 +68,11 @@ noise 0.25  →  20 + 6 = 26 cubes high
 
 ## Why chunks?
 
-Like pages in a map book.
-One street changes → you reprint **one page**, not the whole book.
-Mining a cube redraws only its chunk.
+So a change stays small.
+Mining a cube redraws **only its own chunk**, not the whole world.
+(If the cube sits on a chunk border, the chunk next to it is redrawn too.)
 
-## Positions (`VoxelTypes.h`)
+## Positions (`World/VoxelTypes.h`)
 
 One spot, four ways to say it:
 
@@ -76,7 +85,7 @@ One spot, four ways to say it:
 
 All conversions live only in `VoxelTypes.h`.
 
-## A chunk (`AVoxelChunk`)
+## A chunk (`AVoxelChunk` + `UChunkMeshComponent`)
 
 Side view of a tiny chunk:
 
@@ -85,16 +94,18 @@ Side view of a tiny chunk:
  3 3 3 3    3 = Snow    ← drawn (air above)
  2 2 2 2    2 = Grass   ← only the edge ones drawn
  1 1 1 1    1 = Stone   ← middle ones hidden → not drawn
+ 4 4 4 4    4 = Bedrock ← only the edge ones drawn (nothing sees from below)
 ```
 
-- `GetBlock` reads a number. `SetBlock` writes one.
-- `RebuildMesh` draws only cubes that touch air.
+- The chunk keeps the numbers. `GetBlock` reads one. `SetBlock` writes one.
 - `SetBlock` refuses unknown numbers. (They'd be invisible but solid.)
+- The chunk's mesh component draws only cubes that touch air.
+- Two classes, two jobs: the chunk is the **list**, the mesh component is the **picture** of the list.
 
 ### Chunk borders
 
 A cube at the edge of a chunk has a neighbor in the **next** chunk.
-So the chunk asks the world: "Is there a cube?"
+So the chunk asks the world: "Is there a cube?" (`GetBlockOrNeighbor`)
 
 ```
  chunk (0,0)  │  chunk (1,0)
@@ -106,44 +117,93 @@ So the chunk asks the world: "Is there a cube?"
 - That's why all chunks are filled **before** any is drawn.
   Otherwise the neighbor would still be empty.
 - At the edge of the world there's no neighbor → "air" → the outer wall is drawn.
+- Mining cube 15 opens a hole next to cube 0 of the next chunk.
+  So the world redraws **both** chunks.
 
 Known limits ⚠️:
-- One changed cube redraws the **whole chunk**. Fine for now 🔜.
+- One changed cube redraws the **whole chunk**. To check the cost: type `stat KubeCraft` in the game console.
 - The world has a fixed size (128 × 128 cubes). You can walk off the edge.
+
+## Mining and placing
+
+```
+Left mouse held → Mining component, every frame (a stopwatch):
+   1. "Which cube am I looking at?"  (LookTarget: a line from the camera, max 5 cubes)
+   2. Same cube as last frame? → add the time. Other cube → start at 0.
+   3. Time ≥ the cube's MineTime → World.MineBlock → the cube becomes air
+Left mouse released → stopwatch off and back to 0
+
+Right mouse pressed → Placing component, once:
+   1. "Which face am I looking at?" → the empty cell in front of it
+   2. World.PlaceBlock → the cell gets the block for its height
+```
+
+- Mining times: stone 1.5 s, grass 0.75 s, snow 0.3 s. Bedrock can't be mined.
+- The mining component only runs while the button is held. The rest of the time it costs nothing.
+- The world asks `FBlockRules` before **every** change. The components can't skip it.
+
+| Rule | Why |
+|---|---|
+| Bedrock (`bBreakable` off) can't be mined | The floor. You can't dig out of the world. |
+| No placing at height 64 or more | The ceiling. |
+| No placing outside the 8 × 8 chunks | There is no chunk to hold the cube. |
+| No placing where a player stands | You'd be stuck inside the cube. |
+
+Where does the line hit? Exactly **on** the surface – the border between the cube and the air in front of it.
+So the code moves half a cube away from the border, into the middle of one cell:
+
+```
+            air cell  │  cube
+  camera ─────────────● hit point (on the border)
+          ◀── 50 cm ──┼── 50 cm ──▶
+          place here  │  mine this
+      (HitToFaceNeighbor)   (HitToBlock)
+```
 
 ## Blocks and height
 
 - Block number = place in the `DA_BlockCatalog` list + 1.
 - **Add new blocks at the end** of the list.
-- Below 16 → stone. Below 26 → grass. Above → snow.
-- Example: a column 26 high = stone at 0..15, grass at 16..25.
+- Below 1 → bedrock. Below 16 → stone. Below 26 → grass. Above → snow.
+- Example: a column 26 high = bedrock at 0, stone at 1..15, grass at 16..25.
+- A placed cube follows the same rule: placed at height 20 → grass.
 - Bottom of the world = 0. Top = 64.
 
 ## Files
 
 ```
-Source/KubeCraft/Public/   .h     Game/, Voxel/, Player/
-Source/KubeCraft/Private/  .cpp   Game/, Voxel/, Player/, Tests/
+Source/KubeCraft/Public/   .h     Blocks/, World/, Terrain/, Player/, Game/
+Source/KubeCraft/Private/  .cpp   the same folders + Tests/
 Content/KubeCraft/         Blocks/, Blueprints/, Input/, Materials/, Maps/L_World
 ```
 
-Blueprints hold only settings. All logic is C++.
+- Which file is in which folder: see **The pieces** above. A class `AVoxelWorld` lives in
+  `Public/World/VoxelWorld.h` + `Private/World/VoxelWorld.cpp`.
+- Folders are by **topic**, not by kind of class – so there is no `Components/` folder.
+  `ChunkMeshComponent` is about drawing the world → `World/`. `MiningComponent` is about the player → `Player/`.
+- Blueprints hold only settings. All logic is C++.
 
 ## How do I…
 
 | I want to… | Do this |
 |---|---|
 | Add a block | New `BlockDefinition` asset + material. Add it at the end of `DA_BlockCatalog`. |
-| Change mining time 🔜 | `MineTime` in the block asset. |
-| Change player size / jump | Numbers at the top of `KubeCraftCharacter.cpp`. |
+| Change mining time | `MineTime` in the block asset. |
+| Make a block unbreakable | Turn off `bBreakable` in the block asset. |
+| Change how far the player reaches | `BP_KubeCraftCharacter` → Mining / Placing → Reach. |
+| Change a mining/placing limit | `Blocks/BlockRules.cpp`. |
+| Change player size / jump | Numbers at the top of `Player/KubeCraftCharacter.cpp`. |
 | Change the hills | `BP_VoxelWorld` → Terrain. |
 | Change the world size | `BP_VoxelWorld` → WorldSizeInChunks. |
 | Get the same world again | Copy the seed from the Output Log into `BP_VoxelWorld` → Seed. Turn off `bRandomSeed`. |
 | Change keys | `IMC_Default`. |
+| See how long a chunk redraw takes | Play, open the console (`~`), type `stat KubeCraft`. |
 | Run the tests | Tools → Session Frontend → Automation → tick `KubeCraft` → Start. |
 
-| Test | Checks |
-|---|---|
-| `KubeCraft.Voxel.Coordinates` | Position conversions, also negative ones |
-| `KubeCraft.Voxel.HeightBands` | Which block goes at which height |
-| `KubeCraft.Voxel.Terrain` | Same seed → same hills. Other seed → other hills. Height stays in the world. |
+Tests live in `Private/Tests/`. Their names follow the folders: `KubeCraft.<Folder>.<What>`.
+
+| Test | Tests code in | Checks |
+|---|---|---|
+| `KubeCraft.World.Coordinates` | `World/VoxelTypes.h` | Position conversions, also negative ones. Which cube a hit means. |
+| `KubeCraft.Blocks.HeightBands` | `Blocks/BlockCatalog` | Which block goes at which height |
+| `KubeCraft.Terrain.Generator` | `Terrain/TerrainGenerator` | Same seed → same hills. Other seed → other hills. Height stays in the world. |

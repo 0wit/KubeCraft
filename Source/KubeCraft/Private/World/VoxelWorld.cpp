@@ -1,9 +1,10 @@
-#include "Voxel/VoxelWorld.h"
+#include "World/VoxelWorld.h"
 
+#include "Blocks/BlockCatalog.h"
+#include "Blocks/BlockRules.h"
 #include "Engine/World.h"
 #include "KubeCraft.h"
-#include "Voxel/BlockCatalog.h"
-#include "Voxel/VoxelChunk.h"
+#include "World/VoxelChunk.h"
 
 using namespace KubeCraft::Voxel;
 
@@ -89,11 +90,22 @@ void AVoxelWorld::SpawnChunk(const FIntPoint& ChunkCoord, const FTerrainGenerato
 	Chunks.Add(ChunkCoord, Chunk);
 }
 
+AVoxelChunk* AVoxelWorld::FindChunk(const FIntPoint& ChunkCoord) const
+{
+	const TObjectPtr<AVoxelChunk>* Chunk = Chunks.Find(ChunkCoord);
+	// The entry can also be null: the engine clears it when a chunk actor is destroyed.
+	return Chunk ? Chunk->Get() : nullptr;
+}
+
 FBlockId AVoxelWorld::GetBlock(const FIntVector& Block) const
 {
-	const TObjectPtr<AVoxelChunk>* Chunk = Chunks.Find(BlockToChunk(Block));
-	// The entry can also be null: the engine clears it when a chunk actor is destroyed.
-	return (Chunk && *Chunk) ? (*Chunk)->GetBlock(BlockToLocal(Block)) : AirBlockId;
+	const AVoxelChunk* Chunk = FindChunk(BlockToChunk(Block));
+	return Chunk ? Chunk->GetBlock(BlockToLocal(Block)) : AirBlockId;
+}
+
+const UBlockDefinition* AVoxelWorld::GetBlockDefinition(const FIntVector& Block) const
+{
+	return Catalog ? Catalog->GetDefinition(GetBlock(Block)) : nullptr;
 }
 
 FVector AVoxelWorld::GetSurfaceLocation(const FIntPoint& Column) const
@@ -105,4 +117,56 @@ FVector AVoxelWorld::GetSurfaceLocation(const FIntPoint& Column) const
 		--Z;
 	}
 	return BlockToWorldTopCenter(FIntVector(Column.X, Column.Y, Z));
+}
+
+bool AVoxelWorld::IsInsideWorld(const FIntVector& Block) const
+{
+	// The chunks are exactly as tall as the world, so the Z check is the floor and the ceiling.
+	return Block.Z >= 0 && Block.Z < ChunkHeight && FindChunk(BlockToChunk(Block));
+}
+
+bool AVoxelWorld::MineBlock(const FIntVector& Block)
+{
+	if (!FBlockRules(*this).CanMine(Block))
+	{
+		return false;
+	}
+	SetBlockAndRedraw(Block, AirBlockId);
+	return true;
+}
+
+bool AVoxelWorld::PlaceBlock(const FIntVector& Block)
+{
+	// CanPlace needs a chunk, and chunks only exist when Generate found a catalog.
+	if (!FBlockRules(*this).CanPlace(Block))
+	{
+		return false;
+	}
+	SetBlockAndRedraw(Block, Catalog->GetIdForHeight(Block.Z));
+	return true;
+}
+
+void AVoxelWorld::SetBlockAndRedraw(const FIntVector& Block, FBlockId Id)
+{
+	const FIntPoint ChunkCoord = BlockToChunk(Block);
+	AVoxelChunk* Chunk = FindChunk(ChunkCoord);
+	if (!Chunk)
+	{
+		return;
+	}
+	const FIntVector Local = BlockToLocal(Block);
+	Chunk->SetBlock(Local, Id);
+	Chunk->RebuildMesh();
+
+	auto RedrawNeighbor = [this, &ChunkCoord](const FIntPoint& Offset)
+	{
+		if (AVoxelChunk* Neighbor = FindChunk(ChunkCoord + Offset))
+		{
+			Neighbor->RebuildMesh();
+		}
+	};
+	if (Local.X == 0)             { RedrawNeighbor(FIntPoint(-1, 0)); }
+	if (Local.X == ChunkSize - 1) { RedrawNeighbor(FIntPoint(1, 0)); }
+	if (Local.Y == 0)             { RedrawNeighbor(FIntPoint(0, -1)); }
+	if (Local.Y == ChunkSize - 1) { RedrawNeighbor(FIntPoint(0, 1)); }
 }

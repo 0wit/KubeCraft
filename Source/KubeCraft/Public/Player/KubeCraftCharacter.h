@@ -7,11 +7,14 @@
 class UCameraComponent;
 class UInputAction;
 class UInputMappingContext;
+class UMiningComponent;
+class UPlacingComponent;
 struct FInputActionValue;
 
 /**
  * First-person player: a capsule sized to fit through 1x2 block gaps, a camera at eye height,
- * and Enhanced Input bindings for walking, looking and jumping.
+ * and Enhanced Input bindings for walking, looking, jumping, mining and placing.
+ * Mining and placing are done by two components; the character only passes the buttons on to them.
  * Input assets are assigned in the Blueprint subclass (BP_KubeCraftCharacter).
  */
 UCLASS()
@@ -27,7 +30,7 @@ protected:
 	/** Moves the input mapping context from the previous player (if any) to the one now controlling this pawn. */
 	virtual void NotifyControllerChanged() override;
 
-	/** Binds the Move, Look and Jump actions to this character. */
+	/** Binds Move, Look and Jump to this character, and Mine and Place to its block components. */
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 private:
@@ -40,6 +43,12 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "KubeCraft|Camera")
 	TObjectPtr<UCameraComponent> Camera;
 
+	UPROPERTY(VisibleAnywhere, Category = "KubeCraft|Blocks")
+	TObjectPtr<UMiningComponent> MiningComponent;
+
+	UPROPERTY(VisibleAnywhere, Category = "KubeCraft|Blocks")
+	TObjectPtr<UPlacingComponent> PlacingComponent;
+
 	UPROPERTY(EditDefaultsOnly, Category = "KubeCraft|Input")
 	TObjectPtr<UInputMappingContext> DefaultMappingContext;
 
@@ -51,4 +60,12 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "KubeCraft|Input")
 	TObjectPtr<UInputAction> JumpAction;
+
+	/** Held to mine the targeted block. */
+	UPROPERTY(EditDefaultsOnly, Category = "KubeCraft|Input")
+	TObjectPtr<UInputAction> MineAction;
+
+	/** Pressed to place a block against the targeted face. */
+	UPROPERTY(EditDefaultsOnly, Category = "KubeCraft|Input")
+	TObjectPtr<UInputAction> PlaceAction;
 };

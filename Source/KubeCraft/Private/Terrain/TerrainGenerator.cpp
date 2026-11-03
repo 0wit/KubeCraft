@@ -1,7 +1,7 @@
-#include "Voxel/TerrainGenerator.h"
+#include "Terrain/TerrainGenerator.h"
 
 #include "Math/RandomStream.h"
-#include "Voxel/VoxelTypes.h"
+#include "World/VoxelTypes.h"
 
 namespace
 {

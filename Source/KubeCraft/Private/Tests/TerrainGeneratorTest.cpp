@@ -1,6 +1,6 @@
 #include "Misc/AutomationTest.h"
-#include "Voxel/TerrainGenerator.h"
-#include "Voxel/VoxelTypes.h"
+#include "Terrain/TerrainGenerator.h"
+#include "World/VoxelTypes.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -8,7 +8,7 @@
  * Checks the promises of FTerrainGenerator: a seed always gives the same land, another seed gives other land,
  * the land is not flat, and the ground always stays inside the world.
  */
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTerrainGeneratorTest, "KubeCraft.Voxel.Terrain",
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTerrainGeneratorTest, "KubeCraft.Terrain.Generator",
 	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
 
 bool FTerrainGeneratorTest::RunTest(const FString& Parameters)

@@ -1,5 +1,5 @@
 #include "Misc/AutomationTest.h"
-#include "Voxel/VoxelTypes.h"
+#include "World/VoxelTypes.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -9,7 +9,7 @@ using namespace KubeCraft::Voxel;
  * Checks the coordinate conversions in VoxelTypes.h, which mining, placing and terrain all rely on.
  * Focus: rounding for negative coordinates, exact block edges, and the worked example in the header.
  */
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FVoxelCoordinatesTest, "KubeCraft.Voxel.Coordinates",
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FVoxelCoordinatesTest, "KubeCraft.World.Coordinates",
 	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
 
 bool FVoxelCoordinatesTest::RunTest(const FString& Parameters)
@@ -49,6 +49,17 @@ bool FVoxelCoordinatesTest::RunTest(const FString& Parameters)
 	// The top face is one full block above the corner and centered in X/Y, also for negative blocks.
 	TestEqual(TEXT("Top center of (0, 0, 0)"), BlockToWorldTopCenter(FIntVector(0, 0, 0)), FVector(50, 50, 100));
 	TestEqual(TEXT("Top center of (-1, 2, -1)"), BlockToWorldTopCenter(FIntVector(-1, 2, -1)), FVector(-50, 250, 0));
+
+	// Aiming: a hit on the top face of block (2, 3, 4) mines that block and places on top of it.
+	const FVector TopHit(250, 350, 500);
+	const FVector Up(0, 0, 1);
+	TestEqual(TEXT("Hit top face -> block"), HitToBlock(TopHit, Up), FIntVector(2, 3, 4));
+	TestEqual(TEXT("Hit top face -> place cell"), HitToFaceNeighbor(TopHit, Up), FIntVector(2, 3, 5));
+	// A hit on the -X face of block (-1, 0, 0) at x = -100: the place cell is further into negative X.
+	const FVector SideHit(-100, 50, 50);
+	const FVector MinusX(-1, 0, 0);
+	TestEqual(TEXT("Hit -X face -> block"), HitToBlock(SideHit, MinusX), FIntVector(-1, 0, 0));
+	TestEqual(TEXT("Hit -X face -> place cell"), HitToFaceNeighbor(SideHit, MinusX), FIntVector(-2, 0, 0));
 
 	// Chunk bounds and the ends of the flat array.
 	const FIntVector LastLocal(ChunkSize - 1, ChunkSize - 1, ChunkHeight - 1);
