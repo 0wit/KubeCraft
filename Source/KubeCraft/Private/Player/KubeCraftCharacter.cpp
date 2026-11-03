@@ -40,8 +40,13 @@ void AKubeCraftCharacter::NotifyControllerChanged()
 	Super::NotifyControllerChanged();
 
 	const APlayerController* PlayerController = Cast<APlayerController>(GetController());
-	if (!PlayerController || !DefaultMappingContext)
+	if (!PlayerController)
 	{
+		return; // Not controlled by a player (e.g. just unpossessed): nothing to map.
+	}
+	if (!DefaultMappingContext)
+	{
+		UE_LOG(LogKubeCraft, Error, TEXT("%s: DefaultMappingContext is not assigned."), *GetName());
 		return;
 	}
 
@@ -60,6 +65,11 @@ void AKubeCraftCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 	if (!EnhancedInput)
 	{
 		UE_LOG(LogKubeCraft, Error, TEXT("%s requires the Enhanced Input component."), *GetName());
+		return;
+	}
+	if (!MoveAction || !LookAction || !JumpAction)
+	{
+		UE_LOG(LogKubeCraft, Error, TEXT("%s: Move, Look and Jump input actions must all be assigned."), *GetName());
 		return;
 	}
 

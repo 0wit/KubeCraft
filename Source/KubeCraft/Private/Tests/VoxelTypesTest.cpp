@@ -1,0 +1,53 @@
+#include "Misc/AutomationTest.h"
+#include "Voxel/VoxelTypes.h"
+
+#if WITH_DEV_AUTOMATION_TESTS
+
+using namespace KubeCraft::Voxel;
+
+/**
+ * Checks the coordinate conversions in VoxelTypes.h, which mining, placing and terrain all rely on.
+ * Focus: rounding for negative coordinates, exact block edges, and the worked example in the header.
+ */
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FVoxelCoordinatesTest, "KubeCraft.Voxel.Coordinates",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FVoxelCoordinatesTest::RunTest(const FString& Parameters)
+{
+	// Rounding down, not toward zero: the classic voxel bug.
+	TestEqual(TEXT("FloorDiv(15, 16)"), FloorDiv(15, 16), 0);
+	TestEqual(TEXT("FloorDiv(16, 16)"), FloorDiv(16, 16), 1);
+	TestEqual(TEXT("FloorDiv(-1, 16)"), FloorDiv(-1, 16), -1);
+	TestEqual(TEXT("FloorDiv(-16, 16)"), FloorDiv(-16, 16), -1);
+	TestEqual(TEXT("FloorDiv(-17, 16)"), FloorDiv(-17, 16), -2);
+
+	// Block edges: [0, 100) cm is block 0, -0.1 cm is already block -1.
+	TestEqual(TEXT("Just below 0"), WorldToBlock(FVector(-0.1, 0, 0)), FIntVector(-1, 0, 0));
+	TestEqual(TEXT("Just below 100"), WorldToBlock(FVector(99.9, 0, 0)), FIntVector(0, 0, 0));
+	TestEqual(TEXT("Exactly 100"), WorldToBlock(FVector(100, 0, 0)), FIntVector(1, 0, 0));
+
+	// The worked example from the VoxelTypes.h comment, step by step.
+	const FIntVector Block = WorldToBlock(FVector(1750, -30, 420));
+	TestEqual(TEXT("Example block"), Block, FIntVector(17, -1, 4));
+	TestEqual(TEXT("Example chunk"), BlockToChunk(Block), FIntPoint(1, -1));
+	TestEqual(TEXT("Example local"), BlockToLocal(Block), FIntVector(1, 15, 4));
+	TestEqual(TEXT("Example index"), LocalToIndex(BlockToLocal(Block)), 1265);
+
+	// A block's center lies inside that same block (round trip, including negatives).
+	for (const FIntVector& B : { FIntVector(0, 0, 0), FIntVector(-1, -17, 3), FIntVector(31, -16, 63) })
+	{
+		TestEqual(*FString::Printf(TEXT("Center round trip %s"), *B.ToString()), WorldToBlock(BlockToWorldCenter(B)), B);
+	}
+
+	// Chunk bounds and the ends of the flat array.
+	const FIntVector LastLocal(ChunkSize - 1, ChunkSize - 1, ChunkHeight - 1);
+	TestTrue(TEXT("Last corner inside"), IsInsideChunk(LastLocal));
+	TestFalse(TEXT("X = ChunkSize outside"), IsInsideChunk(FIntVector(ChunkSize, 0, 0)));
+	TestFalse(TEXT("Z = -1 outside"), IsInsideChunk(FIntVector(0, 0, -1)));
+	TestEqual(TEXT("First index"), LocalToIndex(FIntVector(0, 0, 0)), 0);
+	TestEqual(TEXT("Last index"), LocalToIndex(LastLocal), BlocksPerChunk - 1);
+
+	return true;
+}
+
+#endif // WITH_DEV_AUTOMATION_TESTS

@@ -88,7 +88,7 @@ void AVoxelChunk::RebuildMesh()
 				const FBlockId Id = GetBlock(Local);
 				if (Id != AirBlockId && IsExposed(Local))
 				{
-					InstancesPerBlockId.FindOrAdd(Id).Emplace(BlockToWorldCenter(Local));
+					InstancesPerBlockId.FindOrAdd(Id).Emplace(LocalToRelativeCenter(Local));
 				}
 			}
 		}

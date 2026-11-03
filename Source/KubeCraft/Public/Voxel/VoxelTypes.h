@@ -62,6 +62,15 @@ namespace KubeCraft::Voxel
 		return (FVector(Block) + FVector(0.5)) * BlockSize;
 	}
 
+	/**
+	 * Center of a block relative to its chunk actor, which sits at the chunk's first block.
+	 * Same math as BlockToWorldCenter, because the local grid starts at the actor's origin.
+	 */
+	inline FVector LocalToRelativeCenter(const FIntVector& Local)
+	{
+		return BlockToWorldCenter(Local);
+	}
+
 	/** Chunk (column) that contains the given block. */
 	inline FIntPoint BlockToChunk(const FIntVector& Block)
 	{

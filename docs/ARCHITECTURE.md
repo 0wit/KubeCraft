@@ -31,7 +31,7 @@ Player ──mine/place──▶ World 🔜 ──▶ Chunk, Chunk, Chunk ...
 ## Why chunks?
 
 Like pages of a road atlas: when one street changes, you reprint **one page**, not the whole book.
-Mining a cube redraws only its chunk, not the whole world. Chunks out of sight aren't drawn.
+Mining a cube redraws only its chunk, not the whole world. Chunks out of sight aren't drawn 🔜.
 
 ## Positions (`VoxelTypes.h`)
 
@@ -70,7 +70,7 @@ Side view of a tiny chunk:
 
 ```
 Source/KubeCraft/Public/   .h     Voxel/, Player/
-Source/KubeCraft/Private/  .cpp   Voxel/, Player/
+Source/KubeCraft/Private/  .cpp   Voxel/, Player/, Tests/
 Content/KubeCraft/         Blocks/, Blueprints/, Input/, Materials/, Maps/L_World
 ```
 
@@ -81,3 +81,5 @@ Blueprints hold only settings. Logic is C++.
 - **Add a block:** new `BlockDefinition` asset + material, add it at the end of `DA_BlockCatalog`.
 - **Change mining time:** `MineTime` in the block asset.
 - **Change keys:** `IMC_Default`.
+- **Run the tests:** Tools → Session Frontend → Automation → tick `KubeCraft` → Start.
+  `KubeCraft.Voxel.Coordinates` checks the position conversions (incl. negative positions).
