@@ -1,0 +1,36 @@
+# Unreal Engine generated / build output
+Binaries/
+Build/
+DerivedDataCache/
+Intermediate/
+Saved/
+Plugins/**/Binaries/
+Plugins/**/Intermediate/
+
+# IDE / solution files (regenerated from .uproject)
+.vs/
+.vscode/
+.idea/
+*.sln
+*.slnx
+*.suo
+*.sdf
+*.VC.db
+*.VC.opendb
+*.opensdf
+*.vcxproj*
+*.xcodeproj
+*.xcworkspace
+
+# Compiled artifacts
+*.pdb
+*.dll
+*.exe
+*.obj
+*.lib
+*.ilk
+*.exp
+
+# OS
+Thumbs.db
+.DS_Store
