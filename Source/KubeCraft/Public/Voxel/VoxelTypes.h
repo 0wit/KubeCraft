@@ -64,6 +64,12 @@ namespace KubeCraft::Voxel
 			FMath::FloorToInt32(WorldLocation.Z / BlockSize));
 	}
 
+	/** World position of a block's minimum corner, e.g. where a chunk actor whose first block this is sits. */
+	inline FVector BlockToWorldCorner(const FIntVector& Block)
+	{
+		return FVector(Block) * BlockSize;
+	}
+
 	/** World position of the center of a block. */
 	inline FVector BlockToWorldCenter(const FIntVector& Block)
 	{

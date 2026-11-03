@@ -37,6 +37,9 @@ bool FVoxelCoordinatesTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Example local"), BlockToLocal(Block), FIntVector(1, 15, 4));
 	TestEqual(TEXT("Example index"), LocalToIndex(BlockToLocal(Block)), 1265);
 
+	// A block's corner is its minimum; negative blocks lie below zero.
+	TestEqual(TEXT("Corner of (-1, 2, 0)"), BlockToWorldCorner(FIntVector(-1, 2, 0)), FVector(-100, 200, 0));
+
 	// A block's center lies inside that same block (round trip, including negatives).
 	for (const FIntVector& B : { FIntVector(0, 0, 0), FIntVector(-1, -17, 3), FIntVector(31, -16, 63) })
 	{

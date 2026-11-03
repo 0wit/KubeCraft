@@ -3,9 +3,9 @@
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Engine/CollisionProfile.h"
 #include "Engine/StaticMesh.h"
-#include "KubeCraft.h"
 #include "Voxel/BlockCatalog.h"
 #include "Voxel/BlockDefinition.h"
+#include "Voxel/VoxelWorld.h"
 
 using namespace KubeCraft::Voxel;
 
@@ -27,6 +27,13 @@ AVoxelChunk::AVoxelChunk()
 	Blocks.Init(AirBlockId, BlocksPerChunk);
 }
 
+void AVoxelChunk::Initialize(AVoxelWorld& InVoxelWorld, const FIntPoint& InChunkCoord)
+{
+	ensureMsgf(!VoxelWorld, TEXT("%s: Initialize() was called twice."), *GetName());
+	VoxelWorld = &InVoxelWorld;
+	ChunkCoord = InChunkCoord;
+}
+
 FBlockId AVoxelChunk::GetBlock(const FIntVector& Local) const
 {
 	return IsInsideChunk(Local) ? Blocks[LocalToIndex(Local)] : AirBlockId;
@@ -46,40 +53,10 @@ void AVoxelChunk::SetBlock(const FIntVector& Local, FBlockId Id)
 	Blocks[LocalToIndex(Local)] = Id;
 }
 
-void AVoxelChunk::BeginPlay()
-{
-	Super::BeginPlay();
-
-	if (!Catalog || !BlockMesh)
-	{
-		UE_LOG(LogKubeCraft, Error, TEXT("%s: Catalog and BlockMesh must both be assigned; the chunk stays empty."),
-			*GetName());
-		return;
-	}
-
-	FillFlatForTesting();
-	RebuildMesh();
-}
-
 bool AVoxelChunk::IsKnownBlock(FBlockId Id) const
 {
+	const UBlockCatalog* Catalog = VoxelWorld ? VoxelWorld->GetCatalog() : nullptr;
 	return Id == AirBlockId || (Catalog && Catalog->GetDefinition(Id));
-}
-
-void AVoxelChunk::FillFlatForTesting()
-{
-	const int32 Height = FMath::Clamp(FlatTestHeight, 0, ChunkHeight);
-	for (int32 Z = 0; Z < Height; ++Z)
-	{
-		const FBlockId Id = Catalog->GetIdForHeight(Z);
-		for (int32 Y = 0; Y < ChunkSize; ++Y)
-		{
-			for (int32 X = 0; X < ChunkSize; ++X)
-			{
-				SetBlock(FIntVector(X, Y, Z), Id);
-			}
-		}
-	}
 }
 
 void AVoxelChunk::RebuildMesh()
@@ -139,8 +116,13 @@ bool AVoxelChunk::IsSolidNeighbor(const FIntVector& Local) const
 	{
 		return true;
 	}
-	// Outside this chunk we don't know the neighbor yet (no world), so treat it as open air.
-	return GetBlock(Local) != AirBlockId;
+	if (IsInsideChunk(Local))
+	{
+		return GetBlock(Local) != AirBlockId;
+	}
+	// Across the chunk border, ask the world. Beyond the edge of the world it answers Air,
+	// so the outer walls of the world stay drawn.
+	return VoxelWorld && VoxelWorld->GetBlock(ChunkToBlockOrigin(ChunkCoord) + Local) != AirBlockId;
 }
 
 UInstancedStaticMeshComponent* AVoxelChunk::FindOrCreateMesh(FBlockId Id)
@@ -150,9 +132,11 @@ UInstancedStaticMeshComponent* AVoxelChunk::FindOrCreateMesh(FBlockId Id)
 		return *Existing;
 	}
 
-	// SetBlock only stores known ids and BeginPlay checks BlockMesh, so this can only fail after a code
-	// change. ensure() reports it once instead of on every rebuild.
+	// SetBlock only stores known ids and the world checks its block mesh before creating chunks, so this can
+	// only fail after a code change. ensure() reports it once instead of on every rebuild.
+	const UBlockCatalog* Catalog = VoxelWorld ? VoxelWorld->GetCatalog() : nullptr;
 	const UBlockDefinition* Definition = Catalog ? Catalog->GetDefinition(Id) : nullptr;
+	UStaticMesh* BlockMesh = VoxelWorld ? VoxelWorld->GetBlockMesh() : nullptr;
 	if (!ensureMsgf(Definition && BlockMesh, TEXT("%s: cannot draw block id %d (not in the catalog, or no block mesh)"),
 		*GetName(), Id))
 	{

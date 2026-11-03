@@ -5,12 +5,11 @@
 #include "Voxel/VoxelTypes.h"
 #include "VoxelChunk.generated.h"
 
-class UBlockCatalog;
+class AVoxelWorld;
 class UInstancedStaticMeshComponent;
-class UStaticMesh;
 
 /**
- * One ChunkSize x ChunkSize x ChunkHeight column of the world. It has two jobs:
+ * One ChunkSize x ChunkSize x ChunkHeight column of the world, created and filled by AVoxelWorld. It has two jobs:
  *
  *  1. Remember its blocks: a flat array of FBlockId (one byte per cube), see LocalToIndex.
  *  2. Draw them (RebuildMesh): one UInstancedStaticMeshComponent per block type - each type has its
@@ -20,7 +19,7 @@ class UStaticMesh;
  * The actor sits at the chunk's world origin, so local block coordinates map directly to
  * relative positions of the instances.
  */
-UCLASS()
+UCLASS(NotPlaceable)
 class KUBECRAFT_API AVoxelChunk : public AActor
 {
 	GENERATED_BODY()
@@ -28,6 +27,9 @@ class KUBECRAFT_API AVoxelChunk : public AActor
 public:
 	/** Creates an empty (all Air) chunk with a root component for the instanced meshes. */
 	AVoxelChunk();
+
+	/** Connects the chunk to its world (catalog, block mesh, neighbors) and tells it where it is. Call once, right after spawning. */
+	void Initialize(AVoxelWorld& InVoxelWorld, const FIntPoint& InChunkCoord);
 
 	/** Block at a local coordinate. Returns Air for coordinates outside the chunk. */
 	FBlockId GetBlock(const FIntVector& Local) const;
@@ -41,36 +43,25 @@ public:
 	/** Recreates all cube instances from the block array. */
 	void RebuildMesh();
 
-protected:
-	virtual void BeginPlay() override;
-
 private:
-	/** Temporary content until the terrain generator exists: a flat slab, block types taken from the height bands. */
-	void FillFlatForTesting();
-
 	/** True for Air and for ids that have a definition in the catalog - the only ids a chunk may store. */
 	bool IsKnownBlock(FBlockId Id) const;
 
 	/** True if a face of this block can be seen, i.e. at least one neighbor is not solid. */
 	bool IsExposed(const FIntVector& Local) const;
 
-	/** True if the neighbor at this local coordinate hides the face next to it. */
+	/** True if the neighbor at this local coordinate hides the face next to it. May lie in a neighbor chunk. */
 	bool IsSolidNeighbor(const FIntVector& Local) const;
 
 	/** Returns the instanced mesh for a block type, creating it on first use. Null if the id is not in the catalog. */
 	UInstancedStaticMeshComponent* FindOrCreateMesh(FBlockId Id);
 
-	/** All block types and the height rule. */
-	UPROPERTY(EditAnywhere, Category = "KubeCraft|Chunk")
-	TObjectPtr<UBlockCatalog> Catalog;
+	/** The world this chunk belongs to; provides the catalog, the block mesh and the neighbor chunks. */
+	UPROPERTY(Transient)
+	TObjectPtr<AVoxelWorld> VoxelWorld;
 
-	/** Mesh drawn for every cube; must be BlockSize wide with its pivot in the center. */
-	UPROPERTY(EditAnywhere, Category = "KubeCraft|Chunk")
-	TObjectPtr<UStaticMesh> BlockMesh;
-
-	/** Height in blocks of the temporary test slab (see FillFlatForTesting); capped at ChunkHeight. */
-	UPROPERTY(EditAnywhere, Category = "KubeCraft|Chunk", meta = (ClampMin = "0"))
-	int32 FlatTestHeight = 6;
+	/** Position of this chunk in chunk coordinates (see BlockToChunk). */
+	FIntPoint ChunkCoord = FIntPoint::ZeroValue;
 
 	/** One mesh component per block type present in this chunk. Key is an FBlockId (UHT needs the raw uint8). */
 	UPROPERTY(Transient)

@@ -53,6 +53,9 @@ public:
 #endif
 
 protected:
+	/** The automation test fills Blocks and HeightBands directly; in the game they are only edited in the asset. */
+	friend class FBlockCatalogHeightBandsTest;
+
 	/**
 	 * Every block type in the game. A block's id is its position in this list + 1 (0 is Air).
 	 * Append new blocks at the end so existing ids don't change.
