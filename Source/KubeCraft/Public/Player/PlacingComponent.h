@@ -20,7 +20,8 @@ class KUBECRAFT_API UPlacingComponent : public UActorComponent
 public:
 	/**
 	 * Places one block of this type in the empty cell in front of the targeted face.
-	 * Returns false if nothing is in reach or the world refused it, so the caller only uses up a block on success.
+	 * Returns false if Type is null (empty slot), nothing is in reach or the world refused it,
+	 * so the caller only uses up a block on success.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "KubeCraft|Placing", meta = (ReturnDisplayName = "Placed"))
 	bool Place(const UBlockDefinition* Type);

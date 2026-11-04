@@ -17,6 +17,11 @@ void UPlacingComponent::BeginPlay()
 
 bool UPlacingComponent::Place(const UBlockDefinition* Type)
 {
+	// An empty slot gives no type: refuse before the trace and the world's overlap check.
+	if (!Type)
+	{
+		return false;
+	}
 	const TOptional<FLookTarget> Target = LookTarget ? LookTarget->Trace() : NullOpt;
 	return Target && Target->World->PlaceBlock(Target->PlaceCell, Type);
 }

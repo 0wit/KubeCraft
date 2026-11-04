@@ -36,6 +36,7 @@ Right mouse pressed → character Blueprint, once:
 
 The world asks `FBlockRules` before **every** change. The components can't skip it.
 `PlaceBlock` also refuses an empty slot (no block) and a block that is not in the catalog.
+`Place` refuses an empty slot even earlier, before it looks for a target.
 
 | Rule | Why |
 |---|---|

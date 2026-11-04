@@ -45,7 +45,8 @@ bool FIncrementalRedrawTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Refill trench"), World.PlaceBlock(FIntVector(4, 5, Top), Test.Stone));
 
 	// 4. Floating snow: a block type the chunk did not draw before, then mined again.
-	const int32 High = Top + 6;
+	constexpr int32 FloatingGap = 5;	// Air blocks between the ground and the snow, so it touches nothing.
+	const int32 High = Top + 1 + FloatingGap;
 	TestTrue(TEXT("Place snow"), World.PlaceBlock(FIntVector(5, 5, High), Test.Snow));
 	TestTrue(TEXT("Place snow"), World.PlaceBlock(FIntVector(6, 5, High), Test.Snow));
 	TestTrue(TEXT("Mine snow"), World.MineBlock(FIntVector(5, 5, High)));
