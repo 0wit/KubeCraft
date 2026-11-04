@@ -33,6 +33,7 @@ public:
 	/**
 	 * For visuals such as the crack overlay: the block being mined right now, its centre (cm) and how far along
 	 * it is (0 = just started, 1 = about to break). Returns false, and leaves the outputs unchanged, if nothing is being mined.
+	 * Pure because it is cheap (no trace), so running it once per connected pin is fine.
 	 */
 	UFUNCTION(BlueprintPure, Category = "KubeCraft|Mining", meta = (ReturnDisplayName = "Is Mining"))
 	bool GetMiningProgress(FVector& BlockCenter, float& Progress) const;

@@ -29,6 +29,9 @@ public:
 	AKubeCraftCharacter();
 
 protected:
+	/** Makes the character tick after its mining component, so the Blueprint visuals read up-to-date progress. */
+	virtual void BeginPlay() override;
+
 	/**
 	 * Moves the input mapping context from the previous player (if any) to the one now controlling this pawn,
 	 * and stops mining, because the old player's button release can no longer arrive.

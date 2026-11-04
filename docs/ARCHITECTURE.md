@@ -190,9 +190,11 @@ FindLookedAtBlockCenter ──▶ outline cube: visible if found, move to the ce
 GetMiningProgress       ──▶ crack cube:   visible if mining, move to the centre, set "Progress"
 ```
 
+- The character ticks **after** its mining component. So the cracks show this frame's progress, not the last one.
 - Outline and cracks are **extra cubes** on top of the block, a bit bigger (1.01 and 1.005). Two sizes so they don't flicker into each other.
 - Why not change the block itself? All stone cubes of a chunk are **one** mesh. Changing its material would crack all of them.
-- Both cubes have **no collision**. Otherwise the look trace would hit them instead of the block.
+- Both cubes have **no collision**. They are only pictures: nothing should bump into them or stand on them.
+  (The look trace would skip them anyway – it ignores the player's own actor.)
 - Bedrock: outline yes (you can look at it), cracks no (it can't be mined).
 
 **Outline (`M_BlockOutline`).** Every cube face has coordinates 0..1. The material shows a pixel only near the border:

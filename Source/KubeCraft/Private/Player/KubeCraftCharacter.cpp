@@ -39,7 +39,8 @@ AKubeCraftCharacter::AKubeCraftCharacter()
 {
 	using KubeCraft::Voxel::BlockSize;
 
-	PrimaryActorTick.bCanEverTick = false;
+	// The C++ class does nothing per frame, but BP_KubeCraftCharacter's Event Tick moves the outline and cracks.
+	PrimaryActorTick.bCanEverTick = true;
 
 	const float CapsuleRadius = 0.5f * PlayerWidthInBlocks * BlockSize;
 	const float CapsuleHalfHeight = 0.5f * PlayerHeightInBlocks * BlockSize;
@@ -58,6 +59,15 @@ AKubeCraftCharacter::AKubeCraftCharacter()
 	LookTargetComponent = CreateDefaultSubobject<ULookTargetComponent>(TEXT("LookTarget"));
 	MiningComponent = CreateDefaultSubobject<UMiningComponent>(TEXT("Mining"));
 	PlacingComponent = CreateDefaultSubobject<UPlacingComponent>(TEXT("Placing"));
+}
+
+void AKubeCraftCharacter::BeginPlay()
+{
+	// Unreal gives no fixed order between an actor's tick and its components' ticks. Mining first means the
+	// Blueprint's Event Tick always shows this frame's progress, not the last one.
+	AddTickPrerequisiteComponent(MiningComponent);
+
+	Super::BeginPlay();
 }
 
 void AKubeCraftCharacter::NotifyControllerChanged()
