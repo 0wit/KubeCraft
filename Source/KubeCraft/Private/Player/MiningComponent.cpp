@@ -4,6 +4,7 @@
 #include "Blocks/BlockRules.h"
 #include "KubeCraft.h"
 #include "Player/LookTargetComponent.h"
+#include "World/VoxelTypes.h"
 #include "World/VoxelWorld.h"
 
 UMiningComponent::UMiningComponent()
@@ -63,6 +64,20 @@ void UMiningComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 		// Still holding: carry on with whatever block is behind it on the next tick.
 		ResetProgress();
 	}
+}
+
+bool UMiningComponent::GetMiningProgress(FVector& BlockCenter, float& Progress) const
+{
+	const AVoxelWorld* World = MinedWorld.Get();
+	// The definition can be missing if the block changed since the last tick (e.g. mined by someone else).
+	const UBlockDefinition* Definition = World ? World->GetBlockDefinition(MinedBlock) : nullptr;
+	if (!Definition)
+	{
+		return false;
+	}
+	BlockCenter = KubeCraft::Voxel::BlockToWorldCenter(MinedBlock);
+	Progress = FMath::Clamp(MinedSeconds / Definition->MineTime, 0.f, 1.f);
+	return true;
 }
 
 void UMiningComponent::ResetProgress()

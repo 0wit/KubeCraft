@@ -30,6 +30,13 @@ public:
 	/** Advances the timer on the targeted block and mines it when the time is up. */
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	/**
+	 * For visuals such as the crack overlay: the block being mined right now, its centre (cm) and how far along
+	 * it is (0 = just started, 1 = about to break). Returns false, and leaves the outputs unchanged, if nothing is being mined.
+	 */
+	UFUNCTION(BlueprintPure, Category = "KubeCraft|Mining", meta = (ReturnDisplayName = "Is Mining"))
+	bool GetMiningProgress(FVector& BlockCenter, float& Progress) const;
+
 protected:
 	/** Finds the owner's aim component. */
 	virtual void BeginPlay() override;

@@ -49,3 +49,14 @@ TOptional<FLookTarget> ULookTargetComponent::Trace() const
 	Target.PlaceCell = KubeCraft::Voxel::HitToFaceNeighbor(Hit.ImpactPoint, Hit.ImpactNormal);
 	return Target;
 }
+
+bool ULookTargetComponent::FindLookedAtBlockCenter(FVector& BlockCenter) const
+{
+	const TOptional<FLookTarget> Target = Trace();
+	if (!Target)
+	{
+		return false;
+	}
+	BlockCenter = KubeCraft::Voxel::BlockToWorldCenter(Target->Block);
+	return true;
+}

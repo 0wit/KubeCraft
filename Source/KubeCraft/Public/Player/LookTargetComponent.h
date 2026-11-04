@@ -39,6 +39,14 @@ public:
 	 */
 	TOptional<FLookTarget> Trace() const;
 
+	/**
+	 * Blueprint version of Trace for visuals such as the block outline: the centre (cm) of the block the player
+	 * looks at. Returns false, and leaves BlockCenter unchanged, if no block is in reach.
+	 * Not pure, so a Blueprint runs the trace once per call instead of once per connected pin.
+	 */
+	UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = "KubeCraft|Aim", meta = (ReturnDisplayName = "Found"))
+	bool FindLookedAtBlockCenter(FVector& BlockCenter) const;
+
 private:
 	/** How far from the camera a block can be mined or placed against. */
 	UPROPERTY(EditAnywhere, Category = "KubeCraft|Aim", meta = (ClampMin = "0", Units = "cm"))

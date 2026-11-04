@@ -48,13 +48,15 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "KubeCraft|Camera")
 	TObjectPtr<UCameraComponent> Camera;
 
-	/** Which block is in the middle of the screen; shared by mining and placing. */
-	UPROPERTY(VisibleAnywhere, Category = "KubeCraft|Blocks")
+	/** Which block is in the middle of the screen; shared by mining and placing. Readable in Blueprints for visual feedback. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "KubeCraft|Blocks", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<ULookTargetComponent> LookTargetComponent;
 
-	UPROPERTY(VisibleAnywhere, Category = "KubeCraft|Blocks")
+	/** Hold-to-mine timer for the targeted block. Readable in Blueprints for visual feedback. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "KubeCraft|Blocks", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UMiningComponent> MiningComponent;
 
+	/** Press-to-place for the face the player looks at. */
 	UPROPERTY(VisibleAnywhere, Category = "KubeCraft|Blocks")
 	TObjectPtr<UPlacingComponent> PlacingComponent;
 

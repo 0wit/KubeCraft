@@ -1,7 +1,5 @@
 # KubeCraft – How It Works
 
-✅ done · 🔜 planned · ⚠️ temporary
-
 ## The idea
 
 - The world is made of cubes.
@@ -18,27 +16,38 @@ Game mode ──1. build──▶ World ──▶ Chunk, Chunk, Chunk ...   (8 �
     │                    │ └─ "may I change this cube?" ──▶ Block rules
     │                    │
     └──2. place on top──▶ Player ──▶ Mining / Placing ──mine/place──▶ World
+                            │
+                            └─ Blueprint: crosshair, outline, cracks   (only shows, changes nothing)
 ```
 
 ## The pieces
 
 Grouped by folder. Each folder is one **topic**, so a change usually stays in one folder.
 
-| Folder | Piece | Job | |
-|---|---|---|---|
-| `Blocks/` – what a block is, what you may do with it | `UBlockDefinition` | One block type: material, mining time, breakable or not | ✅ |
-| | `UBlockCatalog` | List of block types. Says which block goes at which height | ✅ |
-| | `FBlockRules` | Says if a cube may be mined, or placed somewhere | ✅ |
-| `World/` – where blocks are, how they're drawn | `VoxelTypes.h` | Converts positions: cm ↔ cube ↔ chunk | ✅ |
-| | `AVoxelWorld` | Owns all chunks. Fills them. Changes cubes and redraws | ✅ |
-| | `AVoxelChunk` | One piece of the world. Keeps its numbers | ✅ |
-| | `UChunkMeshComponent` | Draws one chunk's cubes | ✅ |
-| `Terrain/` – how the hills are made | `FTerrainGenerator` | Says how high the ground is at one spot | ✅ |
-| `Player/` – the player, and what they do with blocks | `AKubeCraftCharacter` | Walk, look, jump. Passes the mine/place buttons on | ✅ |
-| | `ULookTargetComponent` | Which cube am I looking at? One reach, shared by mining and placing | ✅ |
-| | `UMiningComponent` | Hold the button → cube breaks after its mining time | ✅ |
-| | `UPlacingComponent` | Press the button → a cube appears on the face you look at | ✅ |
-| `Game/` – start order of a game | `AKubeCraftGameMode` | Builds the world, then puts the player on it | ✅ |
+| Folder | Piece | Job |
+|---|---|---|
+| `Blocks/` – what a block is, what you may do with it | `UBlockDefinition` | One block type: material, mining time, breakable or not |
+| | `UBlockCatalog` | List of block types. Says which block goes at which height |
+| | `FBlockRules` | Says if a cube may be mined, or placed somewhere |
+| `World/` – where blocks are, how they're drawn | `VoxelTypes.h` | Converts positions: cm ↔ cube ↔ chunk |
+| | `AVoxelWorld` | Owns all chunks. Fills them. Changes cubes and redraws |
+| | `AVoxelChunk` | One piece of the world. Keeps its numbers |
+| | `UChunkMeshComponent` | Draws one chunk's cubes |
+| `Terrain/` – how the hills are made | `FTerrainGenerator` | Says how high the ground is at one spot |
+| `Player/` – the player, and what they do with blocks | `AKubeCraftCharacter` | Walk, look, jump. Passes the mine/place buttons on |
+| | `ULookTargetComponent` | Which cube am I looking at? One reach, shared by mining and placing |
+| | `UMiningComponent` | Hold the button → cube breaks after its mining time |
+| | `UPlacingComponent` | Press the button → a cube appears on the face you look at |
+| `Game/` – start order of a game | `AKubeCraftGameMode` | Builds the world, then puts the player on it |
+
+Not C++, but part of the game:
+
+| Asset | Job |
+|---|---|
+| `BP_KubeCraftCharacter` | Settings of the player + the graphs that move the outline and the cracks |
+| `M_BlockOutline` | Draws only the edges of a cube |
+| `M_BlockCrack` + `T_Crack` | Draws cracks that grow with mining progress |
+| `WBP_Crosshair` | A "+" in the middle of the screen |
 
 ## Starting a game
 
@@ -49,7 +58,8 @@ Grouped by folder. Each folder is one **topic**, so a change usually stays in on
 5. Then every chunk draws itself. (Fill all first, draw second – see "Chunk borders".)
 6. The game mode puts the player on the ground in the middle.
    It lifts the player by half its height. Why? A character's position is its **middle**, not its feet.
-7. The game starts.
+7. The character shows the crosshair.
+8. The game starts.
 
 ## Terrain (`FTerrainGenerator`)
 
@@ -121,7 +131,7 @@ So the chunk asks the world: "Is there a cube?" (`GetBlockOrNeighbor`)
   So the world redraws **both** chunks.
 - If cube 0 there is air, nothing changes for that chunk. Then only the own chunk is redrawn.
 
-Known limits ⚠️:
+Known limits:
 - One changed cube redraws the **whole chunk**. To check the cost: type `stat KubeCraft` in the game console.
 - The world has a fixed size (128 × 128 cubes). You can walk off the edge.
 
@@ -161,6 +171,46 @@ So the code moves half a cube away from the border, into the middle of one cell:
       (HitToFaceNeighbor)   (HitToBlock)
 ```
 
+## What the player sees (Blueprint)
+
+The rules are C++. The **feedback** is Blueprint + materials, in `BP_KubeCraftCharacter`.
+The Blueprint only reads. It never changes a block.
+
+C++ gives the Blueprint two functions:
+
+| Function | On | Gives |
+|---|---|---|
+| `FindLookedAtBlockCenter` | LookTarget component | Found? + centre of the block you look at (cm) |
+| `GetMiningProgress` | Mining component | Mining? + centre of the mined block + progress 0..1 |
+
+Every frame (Event Tick):
+
+```
+FindLookedAtBlockCenter ──▶ outline cube: visible if found, move to the centre
+GetMiningProgress       ──▶ crack cube:   visible if mining, move to the centre, set "Progress"
+```
+
+- Outline and cracks are **extra cubes** on top of the block, a bit bigger (1.01 and 1.005). Two sizes so they don't flicker into each other.
+- Why not change the block itself? All stone cubes of a chunk are **one** mesh. Changing its material would crack all of them.
+- Both cubes have **no collision**. Otherwise the look trace would hit them instead of the block.
+- Bedrock: outline yes (you can look at it), cracks no (it can't be mined).
+
+**Outline (`M_BlockOutline`).** Every cube face has coordinates 0..1. The material shows a pixel only near the border:
+
+```
+distance from face centre = max(|U − 0.5|, |V − 0.5|)     0 in the middle, 0.5 at the edge
+shown if distance ≥ 0.48
+```
+
+**Cracks (`M_BlockCrack`).** `T_Crack` is a grayscale picture. A pixel's gray value says **when** it appears:
+
+```
+gray 0.1 → appears at 10 % progress      white → never
+shown if Progress ≥ gray value
+```
+
+**Crosshair (`WBP_Crosshair`).** A widget with a "+" text, anchored to the screen centre. The look trace also goes through the screen centre, so the "+" and the outline agree.
+
 ## Blocks and height
 
 - Block number = place in the `DA_BlockCatalog` list + 1.
@@ -175,14 +225,14 @@ So the code moves half a cube away from the border, into the middle of one cell:
 ```
 Source/KubeCraft/Public/   .h     Blocks/, World/, Terrain/, Player/, Game/
 Source/KubeCraft/Private/  .cpp   the same folders + Tests/
-Content/KubeCraft/         Blocks/, Blueprints/, Input/, Materials/, Maps/L_World
+Content/KubeCraft/         Blocks/, Blueprints/, Input/, Materials/, Textures/, UI/, Maps/L_World
 ```
 
 - Which file is in which folder: see **The pieces** above. A class `AVoxelWorld` lives in
   `Public/World/VoxelWorld.h` + `Private/World/VoxelWorld.cpp`.
 - Folders are by **topic**, not by kind of class – so there is no `Components/` folder.
   `ChunkMeshComponent` is about drawing the world → `World/`. `MiningComponent` is about the player → `Player/`.
-- Blueprints hold only settings. All logic is C++.
+- Game rules are C++. Blueprints hold settings and the visual feedback (see "What the player sees").
 
 ## How do I…
 
@@ -198,6 +248,9 @@ Content/KubeCraft/         Blocks/, Blueprints/, Input/, Materials/, Maps/L_Worl
 | Change the world size | `BP_VoxelWorld` → WorldSizeInChunks. |
 | Get the same world again | Copy the seed from the Output Log into `BP_VoxelWorld` → Seed. Turn off `bRandomSeed`. |
 | Change keys | `IMC_Default`. |
+| Make the outline thicker / another colour | `M_BlockOutline`: lower the 0.48 in **Step** / change the colour node. |
+| Change the cracks | Draw a new `T_Crack` (gray = when a pixel appears). |
+| Change the crosshair | `WBP_Crosshair`. |
 | See how long a chunk redraw takes | Play, open the console (`~`), type `stat KubeCraft`. |
 | Run the tests | Tools → Session Frontend → Automation → tick `KubeCraft` → Start. |
 
