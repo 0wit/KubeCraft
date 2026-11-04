@@ -119,7 +119,7 @@ void AKubeCraftCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 		UE_LOG(LogKubeCraft, Error, TEXT("%s: Move, Look and Jump input actions must all be assigned."), *GetName());
 	}
 
-	// Mining and placing are extras on top: a missing action turns off only that feature.
+	// Mining is an extra on top: a missing action turns off only mining.
 	if (MineAction)
 	{
 		EnhancedInput->BindAction(MineAction, ETriggerEvent::Started, MiningComponent.Get(), &UMiningComponent::StartMining);
@@ -128,14 +128,6 @@ void AKubeCraftCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 	else
 	{
 		UE_LOG(LogKubeCraft, Warning, TEXT("%s: MineAction is not assigned; mining is off."), *GetName());
-	}
-	if (PlaceAction)
-	{
-		EnhancedInput->BindAction(PlaceAction, ETriggerEvent::Started, PlacingComponent.Get(), &UPlacingComponent::Place);
-	}
-	else
-	{
-		UE_LOG(LogKubeCraft, Warning, TEXT("%s: PlaceAction is not assigned; placing is off."), *GetName());
 	}
 }
 

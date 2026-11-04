@@ -59,6 +59,12 @@ EDataValidationResult UBlockCatalog::IsDataValid(FDataValidationContext& Context
 		{
 			AddError(FText::Format(LOCTEXT("DuplicateBlock", "Block '{0}' is listed twice."), FText::FromString(Block->GetName())));
 		}
+		if (Block && !Block->Texture)
+		{
+			// Not an error: the game works, the hotbar just shows an empty picture for this block.
+			Context.AddWarning(FText::Format(LOCTEXT("MissingTexture", "Block '{0}' has no texture; its hotbar slot shows no picture."),
+				FText::FromString(Block->GetName())));
+		}
 	}
 
 	for (int32 Index = 0; Index < HeightBands.Num(); ++Index)

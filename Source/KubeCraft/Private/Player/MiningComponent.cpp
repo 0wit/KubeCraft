@@ -57,10 +57,14 @@ void UMiningComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 	// CanMine passed, so the block is not Air and has a definition. (The check above only decides whether
 	// the timer runs; MineBlock asks the rules again itself.)
+	const UBlockDefinition* Type = Target->World->GetBlockDefinition(Target->Block);
 	MinedSeconds += DeltaTime;
-	if (MinedSeconds >= Target->World->GetBlockDefinition(Target->Block)->MineTime)
+	if (MinedSeconds >= Type->MineTime)
 	{
-		Target->World->MineBlock(Target->Block);
+		if (Target->World->MineBlock(Target->Block))
+		{
+			OnBlockMined.Broadcast(Type);
+		}
 		// Still holding: carry on with whatever block is behind it on the next tick.
 		ResetProgress();
 	}

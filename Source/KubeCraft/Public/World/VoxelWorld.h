@@ -47,10 +47,10 @@ public:
 	bool MineBlock(const FIntVector& Block);
 
 	/**
-	 * Puts a block here if FBlockRules allows it and redraws what changed. Returns true if a block was placed.
-	 * The type comes from the height bands, like in the generated terrain; no band for that height means no block.
+	 * Puts a block of the given type here if FBlockRules allows it and redraws what changed.
+	 * Returns true if a block was placed; false also for a type that is null or not in the catalog.
 	 */
-	bool PlaceBlock(const FIntVector& Block);
+	bool PlaceBlock(const FIntVector& Block, const UBlockDefinition* Type);
 
 	/** All block types and the height rule; shared by every chunk. */
 	const UBlockCatalog* GetCatalog() const { return Catalog; }

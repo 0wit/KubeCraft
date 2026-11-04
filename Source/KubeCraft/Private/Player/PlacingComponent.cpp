@@ -15,10 +15,8 @@ void UPlacingComponent::BeginPlay()
 	}
 }
 
-void UPlacingComponent::Place()
+bool UPlacingComponent::Place(const UBlockDefinition* Type)
 {
-	if (const TOptional<FLookTarget> Target = LookTarget ? LookTarget->Trace() : NullOpt)
-	{
-		Target->World->PlaceBlock(Target->PlaceCell);
-	}
+	const TOptional<FLookTarget> Target = LookTarget ? LookTarget->Trace() : NullOpt;
+	return Target && Target->World->PlaceBlock(Target->PlaceCell, Type);
 }

@@ -30,7 +30,7 @@ struct FBlockHeightBand
  *   HeightBands:  [{MaxZ 1: Bedrock}, {MaxZ 16: Stone}, {MaxZ 26: Grass}, {MaxZ 64: Snow}]
  *
  * Chunks store only the id (one byte per cube); this catalog turns an id back into its definition.
- * The height bands decide the block type by height, both for terrain generation and for placing.
+ * The height bands decide which block type the terrain generator puts at each height.
  */
 UCLASS(BlueprintType)
 class KUBECRAFT_API UBlockCatalog : public UPrimaryDataAsset

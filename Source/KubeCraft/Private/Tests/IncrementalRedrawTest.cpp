@@ -33,8 +33,8 @@ bool FIncrementalRedrawTest::RunTest(const FString& Parameters)
 		}
 	}
 	// 2. Fill part of the pit back in.
-	TestTrue(TEXT("Refill pit"), World.PlaceBlock(FIntVector(0, 0, Top - 1)));
-	TestTrue(TEXT("Refill pit"), World.PlaceBlock(FIntVector(-1, 0, Top - 1)));
+	TestTrue(TEXT("Refill pit"), World.PlaceBlock(FIntVector(0, 0, Top - 1), Test.Stone));
+	TestTrue(TEXT("Refill pit"), World.PlaceBlock(FIntVector(-1, 0, Top - 1), Test.Stone));
 
 	// 3. A trench inside one chunk: each removal takes a cube out of the middle of the mesh's list.
 	for (int32 X = 3; X <= 7; ++X)
@@ -42,12 +42,12 @@ bool FIncrementalRedrawTest::RunTest(const FString& Parameters)
 		TestTrue(TEXT("Mine trench"), World.MineBlock(FIntVector(X, 5, Top)));
 	}
 	TestTrue(TEXT("Dig deeper"), World.MineBlock(FIntVector(5, 5, Top - 1)));
-	TestTrue(TEXT("Refill trench"), World.PlaceBlock(FIntVector(4, 5, Top)));
+	TestTrue(TEXT("Refill trench"), World.PlaceBlock(FIntVector(4, 5, Top), Test.Stone));
 
 	// 4. Floating snow: a block type the chunk did not draw before, then mined again.
-	const int32 High = FTestVoxelWorld::SnowFromZ;
-	TestTrue(TEXT("Place snow"), World.PlaceBlock(FIntVector(5, 5, High)));
-	TestTrue(TEXT("Place snow"), World.PlaceBlock(FIntVector(6, 5, High)));
+	const int32 High = Top + 6;
+	TestTrue(TEXT("Place snow"), World.PlaceBlock(FIntVector(5, 5, High), Test.Snow));
+	TestTrue(TEXT("Place snow"), World.PlaceBlock(FIntVector(6, 5, High), Test.Snow));
 	TestTrue(TEXT("Mine snow"), World.MineBlock(FIntVector(5, 5, High)));
 
 	const FTestVoxelWorld::FDrawnCubes Incremental = Test.GetDrawnCubes();

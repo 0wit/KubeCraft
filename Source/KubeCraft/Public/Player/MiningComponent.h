@@ -5,7 +5,11 @@
 #include "MiningComponent.generated.h"
 
 class AVoxelWorld;
+class UBlockDefinition;
 class ULookTargetComponent;
+
+/** A block was really removed by this mining component; Type is what it was (e.g. DA_Block_Stone). */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBlockMined, const UBlockDefinition*, Type);
 
 /**
  * Hold-to-mine for the pawn it is attached to: while the mine button is held, it times how long the player
@@ -37,6 +41,10 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category = "KubeCraft|Mining", meta = (ReturnDisplayName = "Is Mining"))
 	bool GetMiningProgress(FVector& BlockCenter, float& Progress) const;
+
+	/** Fires once per block this component breaks, so that others (such as the inventory) can collect it. */
+	UPROPERTY(BlueprintAssignable, Category = "KubeCraft|Mining")
+	FOnBlockMined OnBlockMined;
 
 protected:
 	/** Finds the owner's aim component. */

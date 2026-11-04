@@ -14,10 +14,11 @@ struct FInputActionValue;
 
 /**
  * First-person player: a capsule sized to fit through 1x2 block gaps, a camera at eye height,
- * and Enhanced Input bindings for walking, looking, jumping, mining and placing.
- * Mining and placing are done by two components that share one aim component (ULookTargetComponent);
- * the character only passes the buttons on to them.
- * Input assets are assigned in the Blueprint subclass (BP_KubeCraftCharacter).
+ * and Enhanced Input bindings for walking, looking, jumping and mining.
+ * Mining and placing are done by two components that share one aim component (ULookTargetComponent).
+ * The character passes the mine button on; the place button is handled by the Blueprint subclass
+ * (BP_KubeCraftCharacter), because it first asks the Blueprint inventory which block to place.
+ * Input assets are assigned in that Blueprint subclass.
  */
 UCLASS()
 class KUBECRAFT_API AKubeCraftCharacter : public ACharacter
@@ -38,7 +39,7 @@ protected:
 	 */
 	virtual void NotifyControllerChanged() override;
 
-	/** Binds Move, Look and Jump to this character, and Mine and Place to its block components. */
+	/** Binds Move, Look and Jump to this character, and Mine to its mining component. */
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 private:
@@ -55,12 +56,12 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "KubeCraft|Blocks", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<ULookTargetComponent> LookTargetComponent;
 
-	/** Hold-to-mine timer for the targeted block. Readable in Blueprints for visual feedback. */
+	/** Hold-to-mine timer for the targeted block. Readable in Blueprints for visual feedback and the inventory. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "KubeCraft|Blocks", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UMiningComponent> MiningComponent;
 
-	/** Press-to-place for the face the player looks at. */
-	UPROPERTY(VisibleAnywhere, Category = "KubeCraft|Blocks")
+	/** Places a block against the face the player looks at. Called from the Blueprint's place input. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "KubeCraft|Blocks", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPlacingComponent> PlacingComponent;
 
 	UPROPERTY(EditDefaultsOnly, Category = "KubeCraft|Input")
@@ -78,8 +79,4 @@ private:
 	/** Held to mine the targeted block. */
 	UPROPERTY(EditDefaultsOnly, Category = "KubeCraft|Input")
 	TObjectPtr<UInputAction> MineAction;
-
-	/** Pressed to place a block against the targeted face. */
-	UPROPERTY(EditDefaultsOnly, Category = "KubeCraft|Input")
-	TObjectPtr<UInputAction> PlaceAction;
 };

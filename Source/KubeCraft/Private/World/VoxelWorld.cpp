@@ -134,15 +134,15 @@ bool AVoxelWorld::MineBlock(const FIntVector& Block)
 	return SetBlockAndRedraw(Block, AirBlockId);
 }
 
-bool AVoxelWorld::PlaceBlock(const FIntVector& Block)
+bool AVoxelWorld::PlaceBlock(const FIntVector& Block, const UBlockDefinition* Type)
 {
 	// CanPlace needs a chunk, and chunks only exist when Generate found a catalog.
 	if (!FBlockRules(*this).CanPlace(Block))
 	{
 		return false;
 	}
-	// Air means no height band covers this height: there is nothing to place.
-	const FBlockId Id = Catalog->GetIdForHeight(Block.Z);
+	// Air means the type is null or not in the catalog: a chunk could not draw it.
+	const FBlockId Id = Catalog->GetId(Type);
 	if (Id == AirBlockId)
 	{
 		return false;

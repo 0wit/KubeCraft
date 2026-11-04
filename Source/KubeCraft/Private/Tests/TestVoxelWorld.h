@@ -19,18 +19,16 @@
  *
  * Layout: 2 x 2 chunks, so blocks X and Y run from -16 to 15 and X = -1 | 0 is a chunk border.
  * The ground is flat: every column is bedrock at Z 0 and stone at Z 1..3; Z 4 and up is Air.
- * Placed blocks follow the height bands: stone below Z 10, snow from Z 10 up.
+ * Snow is in the catalog but not in the ground, so a test can place a type that no chunk has drawn yet.
  *
  *   FTestVoxelWorld Test;
  *   Test.World->MineBlock(FIntVector(0, 0, 3));
+ *   Test.World->PlaceBlock(FIntVector(0, 0, 4), Test.Snow);
  */
 struct FTestVoxelWorld
 {
 	/** Height of the flat ground: the first Air block of every column. */
 	static constexpr int32 GroundHeight = 4;
-
-	/** Placed blocks from this height up become snow instead of stone. */
-	static constexpr int32 SnowFromZ = 10;
 
 	/** The voxel world under test; null if the setup failed (the test should stop then). */
 	AVoxelWorld* World = nullptr;
@@ -58,7 +56,7 @@ struct FTestVoxelWorld
 
 		UBlockCatalog* Catalog = NewObject<UBlockCatalog>();
 		Catalog->Blocks = { Bedrock, Stone, Snow };
-		Catalog->HeightBands = { MakeBand(1, Bedrock), MakeBand(SnowFromZ, Stone), MakeBand(KubeCraft::Voxel::ChunkHeight, Snow) };
+		Catalog->HeightBands = { MakeBand(1, Bedrock), MakeBand(KubeCraft::Voxel::ChunkHeight, Stone) };
 
 		World = EngineWorld->SpawnActor<AVoxelWorld>();
 		World->Catalog = Catalog;

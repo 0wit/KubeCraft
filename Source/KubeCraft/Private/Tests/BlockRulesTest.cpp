@@ -66,14 +66,18 @@ bool FMineAndPlaceTest::RunTest(const FString& Parameters)
 	TestFalse(TEXT("Mine bedrock"), World.MineBlock(FIntVector(3, 3, 0)));
 	TestEqual(TEXT("Bedrock stays"), World.GetBlock(FIntVector(3, 3, 0)), Test.IdOf(Test.Bedrock));
 
-	// Placing fills the cell with the block for its height.
-	TestTrue(TEXT("Place back"), World.PlaceBlock(Ground));
-	TestEqual(TEXT("Low block is stone"), World.GetBlock(Ground), Test.IdOf(Test.Stone));
-	TestFalse(TEXT("Place into a solid cell"), World.PlaceBlock(Ground));
-	const FIntVector High(3, 3, FTestVoxelWorld::SnowFromZ);
-	TestTrue(TEXT("Place high up"), World.PlaceBlock(High));
-	TestEqual(TEXT("High block is snow"), World.GetBlock(High), Test.IdOf(Test.Snow));
-	TestFalse(TEXT("Place outside the world"), World.PlaceBlock(FIntVector(16, 3, Top + 1)));
+	// Placing fills the cell with the given type, whatever the height.
+	TestTrue(TEXT("Place snow back"), World.PlaceBlock(Ground, Test.Snow));
+	TestEqual(TEXT("Placed block is snow"), World.GetBlock(Ground), Test.IdOf(Test.Snow));
+	TestFalse(TEXT("Place into a solid cell"), World.PlaceBlock(Ground, Test.Stone));
+	TestEqual(TEXT("Solid cell keeps its block"), World.GetBlock(Ground), Test.IdOf(Test.Snow));
+	TestFalse(TEXT("Place outside the world"), World.PlaceBlock(FIntVector(16, 3, Top + 1), Test.Stone));
+
+	// Placing needs a type the catalog knows; anything else would be an invisible solid block.
+	const FIntVector Above(3, 3, Top + 1);
+	TestFalse(TEXT("Place no type"), World.PlaceBlock(Above, nullptr));
+	TestFalse(TEXT("Place a type not in the catalog"), World.PlaceBlock(Above, NewObject<UBlockDefinition>()));
+	TestEqual(TEXT("Refused cell stays Air"), World.GetBlock(Above), AirBlockId);
 
 	// Mining a buried block at X = 0 uncovers its neighbor at X = -1, which belongs to the next chunk.
 	// That chunk must be redrawn too, so it draws one cube more than before.
