@@ -1,7 +1,7 @@
 #include "World/VoxelChunk.h"
 
 #include "Blocks/BlockCatalog.h"
-#include "World/ChunkMeshComponent.h"
+#include "Rendering/ChunkMeshComponent.h"
 #include "World/VoxelWorld.h"
 
 using namespace KubeCraft::Voxel;
@@ -58,6 +58,11 @@ void AVoxelChunk::SetBlock(const FIntVector& Local, FBlockId Id)
 void AVoxelChunk::RebuildMesh()
 {
 	Mesh->Rebuild();
+}
+
+void AVoxelChunk::RedrawBlock(const FIntVector& Local)
+{
+	Mesh->RedrawBlock(Local);
 }
 
 bool AVoxelChunk::IsKnownBlock(FBlockId Id) const

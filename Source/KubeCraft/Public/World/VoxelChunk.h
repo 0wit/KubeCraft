@@ -39,12 +39,15 @@ public:
 
 	/**
 	 * Changes one block. Ignored (with an ensure) for coordinates outside the chunk and ids not in the catalog.
-	 * Does not update the visuals; call RebuildMesh() after a batch of changes.
+	 * Does not update the visuals; call RedrawBlock() for the changed cells, or RebuildMesh() after many changes.
 	 */
 	void SetBlock(const FIntVector& Local, FBlockId Id);
 
-	/** Redraws all cubes from the block array. */
+	/** Redraws all cubes from the block array, e.g. once after the world is filled. */
 	void RebuildMesh();
+
+	/** Redraws the cube of one cell only, e.g. after it or a neighbor changed. */
+	void RedrawBlock(const FIntVector& Local);
 
 private:
 	/** True for Air and for ids that have a definition in the catalog - the only ids a chunk may store. */

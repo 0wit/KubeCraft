@@ -43,6 +43,13 @@ namespace KubeCraft::Voxel
 	/** Number of cells in one chunk, i.e. the length of its flat block array. */
 	inline constexpr int32 BlocksPerChunk = ChunkSize * ChunkSize * ChunkHeight;
 
+	/** Steps from a block to the six blocks that touch its faces: +X, -X, +Y, -Y, +Z, -Z. */
+	inline const FIntVector FaceNeighborOffsets[] = {
+		FIntVector(1, 0, 0), FIntVector(-1, 0, 0),
+		FIntVector(0, 1, 0), FIntVector(0, -1, 0),
+		FIntVector(0, 0, 1), FIntVector(0, 0, -1),
+	};
+
 	/**
 	 * Integer division that rounds towards negative infinity (-1 / 16 == -1, not 0).
 	 * Divisor must be positive - it is always a grid size here.

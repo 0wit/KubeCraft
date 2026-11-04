@@ -154,30 +154,30 @@ bool AVoxelWorld::PlaceBlock(const FIntVector& Block)
 
 void AVoxelWorld::SetBlockAndRedraw(const FIntVector& Block, FBlockId Id)
 {
-	const FIntPoint ChunkCoord = BlockToChunk(Block);
-	AVoxelChunk* Chunk = FindChunk(ChunkCoord);
+	AVoxelChunk* Chunk = FindChunk(BlockToChunk(Block));
 	if (!Chunk)
 	{
 		return;
 	}
-	const FIntVector Local = BlockToLocal(Block);
-	Chunk->SetBlock(Local, Id);
-	Chunk->RebuildMesh();
+	Chunk->SetBlock(BlockToLocal(Block), Id);
 
-	auto RedrawNeighbor = [this, &Block, &ChunkCoord](const FIntPoint& Offset)
+	// Only the block itself and the six blocks touching it can appear or disappear.
+	RedrawBlock(Block);
+	for (const FIntVector& Offset : FaceNeighborOffsets)
 	{
-		// The neighbor only draws its solid cubes. If its cube next to ours is Air, none of its faces change.
-		if (GetBlock(Block + FIntVector(Offset.X, Offset.Y, 0)) == AirBlockId)
-		{
-			return;
-		}
-		if (AVoxelChunk* Neighbor = FindChunk(ChunkCoord + Offset))
-		{
-			Neighbor->RebuildMesh();
-		}
-	};
-	if (Local.X == 0)             { RedrawNeighbor(FIntPoint(-1, 0)); }
-	if (Local.X == ChunkSize - 1) { RedrawNeighbor(FIntPoint(1, 0)); }
-	if (Local.Y == 0)             { RedrawNeighbor(FIntPoint(0, -1)); }
-	if (Local.Y == ChunkSize - 1) { RedrawNeighbor(FIntPoint(0, 1)); }
+		RedrawBlock(Block + Offset);
+	}
+}
+
+void AVoxelWorld::RedrawBlock(const FIntVector& Block)
+{
+	// Neighbors below the floor, above the ceiling or past the edge of the world have nothing to draw.
+	if (!IsInsideWorld(Block))
+	{
+		return;
+	}
+	if (AVoxelChunk* Chunk = FindChunk(BlockToChunk(Block)))
+	{
+		Chunk->RedrawBlock(BlockToLocal(Block));
+	}
 }

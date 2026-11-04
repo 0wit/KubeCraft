@@ -75,11 +75,13 @@ private:
 	AVoxelChunk* FindChunk(const FIntPoint& ChunkCoord) const;
 
 	/**
-	 * Changes one block and redraws its chunk. A block on a chunk border also touches blocks of the
-	 * neighbor chunk, whose faces may appear or disappear, so that chunk is redrawn too (only if the touching
-	 * block there is solid; otherwise nothing changes for it).
+	 * Changes one block and redraws it and its six neighbors - nothing else can change. On a chunk border
+	 * some of those neighbors belong to the next chunk; they are redrawn there.
 	 */
 	void SetBlockAndRedraw(const FIntVector& Block, FBlockId Id);
+
+	/** Redraws the cube of one block in whichever chunk holds it. Does nothing outside the world. */
+	void RedrawBlock(const FIntVector& Block);
 
 	/** All block types and the height rule. */
 	UPROPERTY(EditAnywhere, Category = "KubeCraft|World")

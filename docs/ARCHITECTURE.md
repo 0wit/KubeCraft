@@ -11,7 +11,7 @@
 Game mode ──1. build──▶ World ──▶ Chunk, Chunk, Chunk ...   (8 × 8 chunks)
     │                    │ │ │      │
     │                    │ │ │      ├─ "what is 2?" ──▶ Block catalog ──▶ Stone, Grass, Snow, Bedrock
-    │                    │ │ │      └─ Chunk mesh: draws the cubes
+    │                    │ │ │      └─ Chunk mesh ──▶ Block instances (one per type): draw the cubes
     │                    │ │ └─ "how high is the ground here?" ──▶ Terrain generator
     │                    │ └─ "may I change this cube?" ──▶ Block rules
     │                    │
@@ -29,10 +29,11 @@ Grouped by folder. Each folder is one **topic**, so a change usually stays in on
 | `Blocks/` – what a block is, what you may do with it | `UBlockDefinition` | One block type: material, mining time, breakable or not |
 | | `UBlockCatalog` | List of block types. Says which block goes at which height |
 | | `FBlockRules` | Says if a cube may be mined, or placed somewhere |
-| `World/` – where blocks are, how they're drawn | `VoxelTypes.h` | Converts positions: cm ↔ cube ↔ chunk |
+| `World/` – where blocks are | `VoxelTypes.h` | Converts positions: cm ↔ cube ↔ chunk |
 | | `AVoxelWorld` | Owns all chunks. Fills them. Changes cubes and redraws |
 | | `AVoxelChunk` | One piece of the world. Keeps its numbers |
-| | `UChunkMeshComponent` | Draws one chunk's cubes |
+| `Rendering/` – how blocks are drawn | `UChunkMeshComponent` | Decides which cubes of one chunk are visible, and of which type |
+| | `UBlockInstancesComponent` | Draws all cubes of one type in one chunk. Adds or removes a single cube |
 | `Terrain/` – how the hills are made | `FTerrainGenerator` | Says how high the ground is at one spot |
 | `Player/` – the player, and what they do with blocks | `AKubeCraftCharacter` | Walk, look, jump. Passes the mine/place buttons on |
 | | `ULookTargetComponent` | Which cube am I looking at? One reach, shared by mining and placing |
@@ -78,9 +79,10 @@ noise 0.25  →  20 + 6 = 26 cubes high
 
 ## Why chunks?
 
-So a change stays small.
-Mining a cube redraws **only its own chunk**, not the whole world.
-(If the cube sits on a chunk border and touches a cube of the next chunk, that chunk is redrawn too.)
+So the work is split into pieces of the same size.
+Each chunk has its own list of numbers and its own picture.
+At the start, every chunk draws all its cubes once.
+After that, a change redraws only **7 cubes** – see "Redrawing after a change".
 
 ## Positions (`World/VoxelTypes.h`)
 
@@ -95,7 +97,7 @@ One spot, four ways to say it:
 
 All conversions live only in `VoxelTypes.h`.
 
-## A chunk (`AVoxelChunk` + `UChunkMeshComponent`)
+## A chunk (`AVoxelChunk` + `Rendering/`)
 
 Side view of a tiny chunk:
 
@@ -110,7 +112,9 @@ Side view of a tiny chunk:
 - The chunk keeps the numbers. `GetBlock` reads one. `SetBlock` writes one.
 - `SetBlock` refuses unknown numbers. (They'd be invisible but solid.)
 - The chunk's mesh component draws only cubes that touch air.
-- Two classes, two jobs: the chunk is the **list**, the mesh component is the **picture** of the list.
+- It has one **block instances** component per block type. Each draws all cubes of its type as copies
+  ("instances") of one cube mesh, in one draw call. Each type has its own material.
+- The chunk is the **list**. `Rendering/` is the **picture** of the list.
 
 ### Chunk borders
 
@@ -128,12 +132,44 @@ So the chunk asks the world: "Is there a cube?" (`GetBlockOrNeighbor`)
   Otherwise the neighbor would still be empty.
 - At the edge of the world there's no neighbor → "air" → the outer wall is drawn.
 - Mining cube 15 opens a hole next to cube 0 of the next chunk.
-  So the world redraws **both** chunks.
-- If cube 0 there is air, nothing changes for that chunk. Then only the own chunk is redrawn.
+  So the world also redraws cube 0 – in the next chunk.
 
 Known limits:
-- One changed cube redraws the **whole chunk**. To check the cost: type `stat KubeCraft` in the game console.
 - The world has a fixed size (128 × 128 cubes). You can walk off the edge.
+
+## Redrawing after a change
+
+A changed cube can only affect itself and the 6 cubes touching its faces.
+So `AVoxelWorld` redraws exactly those 7. Each one goes to the chunk that holds it.
+
+```
+        above
+  left  CUBE  right      + front and back
+        below
+```
+
+For one cube, the mesh component asks: "Should a cube show here, and which type?"
+
+| Cell is… | Shown? |
+|---|---|
+| Air | No |
+| Solid, touches air on some side | Yes, its type |
+| Solid, buried on all 6 sides | No |
+
+Then it fixes the picture: removes the cube from the wrong type, adds it to the right one. If nothing changed, nothing happens.
+
+**How one cube is removed (`UBlockInstancesComponent`).** The engine keeps the cubes in a list.
+Removing one moves the **last** cube into the gap (so nothing else has to shift).
+The component keeps a note "which cell is at which place in the list" and fixes it:
+
+```
+list:  [A B C D]     remove B  →  [A D C]
+note:  D is at 3                  D is at 1   ← the only fix
+```
+
+- At the start, a chunk still draws everything at once (`Rebuild`): faster than one cube at a time.
+- Cost: type `stat KubeCraft` in the game console. "Block Redraw" = one cube, "Chunk Rebuild" = a whole chunk.
+  Read the **Max** column – a redraw happens in one frame only.
 
 ## Mining and placing
 
@@ -225,7 +261,7 @@ shown if Progress ≥ gray value
 ## Files
 
 ```
-Source/KubeCraft/Public/   .h     Blocks/, World/, Terrain/, Player/, Game/
+Source/KubeCraft/Public/   .h     Blocks/, World/, Rendering/, Terrain/, Player/, Game/
 Source/KubeCraft/Private/  .cpp   the same folders + Tests/
 Content/KubeCraft/         Blocks/, Blueprints/, Input/, Materials/, Textures/, UI/, Maps/L_World
 ```
@@ -233,7 +269,7 @@ Content/KubeCraft/         Blocks/, Blueprints/, Input/, Materials/, Textures/, 
 - Which file is in which folder: see **The pieces** above. A class `AVoxelWorld` lives in
   `Public/World/VoxelWorld.h` + `Private/World/VoxelWorld.cpp`.
 - Folders are by **topic**, not by kind of class – so there is no `Components/` folder.
-  `ChunkMeshComponent` is about drawing the world → `World/`. `MiningComponent` is about the player → `Player/`.
+  `ChunkMeshComponent` is about drawing the world → `Rendering/`. `MiningComponent` is about the player → `Player/`.
 - Game rules are C++. Blueprints hold settings and the visual feedback (see "What the player sees").
 
 ## How do I…
@@ -253,7 +289,7 @@ Content/KubeCraft/         Blocks/, Blueprints/, Input/, Materials/, Textures/, 
 | Make the outline thicker / another colour | `M_BlockOutline`: lower the 0.48 in **Step** / change the colour node. |
 | Change the cracks | Draw a new `T_Crack` (gray = when a pixel appears). |
 | Change the crosshair | `WBP_Crosshair`. |
-| See how long a chunk redraw takes | Play, open the console (`~`), type `stat KubeCraft`. |
+| See how long a redraw takes | Play, open the console (`~`), type `stat KubeCraft`. "Block Redraw" = one cube, "Chunk Rebuild" = a whole chunk. |
 | Run the tests | Tools → Session Frontend → Automation → tick `KubeCraft` → Start. |
 
 Tests live in `Private/Tests/`. There are two kinds:
@@ -268,5 +304,6 @@ Tests live in `Private/Tests/`. There are two kinds:
 | `KubeCraft.Terrain.Generator` | `Terrain/TerrainGenerator` | Same seed → same hills. Other seed → other hills. Height stays in the world. |
 | `KubeCraft.Integration.BlockRules` | `Blocks/BlockRules` | What may be mined. Where a block may be placed (floor, ceiling, edges, solid cells). |
 | `KubeCraft.Integration.MineAndPlace` | `World/VoxelWorld` | Mining and placing really change blocks. Placed type follows the height. A border change redraws the next chunk. |
+| `KubeCraft.Integration.IncrementalRedraw` | `Rendering/` | After many mines and places (across chunk borders, a new block type), the cube-by-cube picture equals a full redraw of every chunk. |
 
 "No placing where a player stands" needs a real player, so it is checked by playing, not by a test.
