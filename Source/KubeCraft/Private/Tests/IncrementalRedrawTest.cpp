@@ -13,7 +13,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FIncrementalRedrawTest, "KubeCraft.Integration.
 
 bool FIncrementalRedrawTest::RunTest(const FString& Parameters)
 {
-	const FTestVoxelWorld Test;
+	FTestVoxelWorld Test;	// Not const: the test rebuilds all chunks to compare.
 	if (!TestNotNull(TEXT("Test world"), Test.World))
 	{
 		return false;

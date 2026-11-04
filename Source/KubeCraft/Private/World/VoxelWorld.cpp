@@ -131,8 +131,7 @@ bool AVoxelWorld::MineBlock(const FIntVector& Block)
 	{
 		return false;
 	}
-	SetBlockAndRedraw(Block, AirBlockId);
-	return true;
+	return SetBlockAndRedraw(Block, AirBlockId);
 }
 
 bool AVoxelWorld::PlaceBlock(const FIntVector& Block)
@@ -148,36 +147,35 @@ bool AVoxelWorld::PlaceBlock(const FIntVector& Block)
 	{
 		return false;
 	}
-	SetBlockAndRedraw(Block, Id);
-	return true;
+	return SetBlockAndRedraw(Block, Id);
 }
 
-void AVoxelWorld::SetBlockAndRedraw(const FIntVector& Block, FBlockId Id)
+bool AVoxelWorld::SetBlockAndRedraw(const FIntVector& Block, FBlockId Id)
 {
 	AVoxelChunk* Chunk = FindChunk(BlockToChunk(Block));
-	if (!Chunk)
+	const FIntVector Local = BlockToLocal(Block);
+	if (!Chunk || !Chunk->SetBlock(Local, Id))
 	{
-		return;
+		return false;
 	}
-	Chunk->SetBlock(BlockToLocal(Block), Id);
 
 	// Only the block itself and the six blocks touching it can appear or disappear.
-	RedrawBlock(Block);
+	Chunk->RedrawBlock(Local);
 	for (const FIntVector& Offset : FaceNeighborOffsets)
 	{
 		RedrawBlock(Block + Offset);
 	}
+	return true;
 }
 
 void AVoxelWorld::RedrawBlock(const FIntVector& Block)
 {
 	// Neighbors below the floor, above the ceiling or past the edge of the world have nothing to draw.
-	if (!IsInsideWorld(Block))
+	// (Same test as IsInsideWorld, but the chunk is needed afterwards, so it is looked up only once.)
+	AVoxelChunk* Chunk = FindChunk(BlockToChunk(Block));
+	const FIntVector Local = BlockToLocal(Block);
+	if (Chunk && IsInsideChunk(Local))
 	{
-		return;
-	}
-	if (AVoxelChunk* Chunk = FindChunk(BlockToChunk(Block)))
-	{
-		Chunk->RedrawBlock(BlockToLocal(Block));
+		Chunk->RedrawBlock(Local);
 	}
 }

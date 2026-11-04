@@ -28,7 +28,8 @@ public:
 
 	/**
 	 * Updates the cube of one cell after it or one of its neighbors changed: adds, removes or swaps it.
-	 * Much cheaper than Rebuild(), because no other cell is looked at.
+	 * Only this cell's cube changes; its six neighbors are only read (on a chunk border, through the world),
+	 * so the neighbor chunks must already be filled. Much cheaper than Rebuild(), which looks at every cell.
 	 */
 	void RedrawBlock(const FIntVector& Local);
 

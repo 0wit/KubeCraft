@@ -110,7 +110,8 @@ Side view of a tiny chunk:
 ```
 
 - The chunk keeps the numbers. `GetBlock` reads one. `SetBlock` writes one.
-- `SetBlock` refuses unknown numbers. (They'd be invisible but solid.)
+- `SetBlock` refuses unknown numbers. (They'd be invisible but solid.) It returns false then,
+  and also when the number is already there. Nothing changed, so nothing is redrawn.
 - The chunk's mesh component draws only cubes that touch air.
 - It has one **block instances** component per block type. Each draws all cubes of its type as copies
   ("instances") of one cube mesh, in one draw call. Each type has its own material.
@@ -166,6 +167,10 @@ The component keeps a note "which cell is at which place in the list" and fixes 
 list:  [A B C D]     remove B  →  [A D C]
 note:  D is at 3                  D is at 1   ← the only fix
 ```
+
+The note must always match the engine's list. So change cubes only through the component (`SetBlocks`,
+`AddBlock`, `RemoveBlock`). If the note and the list ever disagree, the component changes nothing and
+raises an **ensure** (an error in the log; the game keeps running). Otherwise it could remove the wrong cube.
 
 - At the start, a chunk still draws everything at once (`Rebuild`): faster than one cube at a time.
 - Cost: type `stat KubeCraft` in the game console. "Block Redraw" = one cube, "Chunk Rebuild" = a whole chunk.

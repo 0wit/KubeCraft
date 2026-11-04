@@ -77,8 +77,9 @@ private:
 	/**
 	 * Changes one block and redraws it and its six neighbors - nothing else can change. On a chunk border
 	 * some of those neighbors belong to the next chunk; they are redrawn there.
+	 * Returns true if the block changed; if not (no chunk there, or the chunk refused the id), nothing is redrawn.
 	 */
-	void SetBlockAndRedraw(const FIntVector& Block, FBlockId Id);
+	bool SetBlockAndRedraw(const FIntVector& Block, FBlockId Id);
 
 	/** Redraws the cube of one block in whichever chunk holds it. Does nothing outside the world. */
 	void RedrawBlock(const FIntVector& Block);

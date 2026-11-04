@@ -41,18 +41,24 @@ FBlockId AVoxelChunk::GetBlockOrNeighbor(const FIntVector& Local) const
 	return VoxelWorld->GetBlock(ChunkToBlockOrigin(ChunkCoord) + Local);
 }
 
-void AVoxelChunk::SetBlock(const FIntVector& Local, FBlockId Id)
+bool AVoxelChunk::SetBlock(const FIntVector& Local, FBlockId Id)
 {
 	if (!ensureMsgf(IsInsideChunk(Local), TEXT("SetBlock outside chunk: %s"), *Local.ToString()))
 	{
-		return;
+		return false;
 	}
 	// Every stored id must be drawable: an unknown id would be solid for its neighbors but invisible.
 	if (!ensureMsgf(IsKnownBlock(Id), TEXT("SetBlock with block id %d, which is not in the catalog"), Id))
 	{
-		return;
+		return false;
 	}
-	Blocks[LocalToIndex(Local)] = Id;
+	FBlockId& Stored = Blocks[LocalToIndex(Local)];
+	if (Stored == Id)
+	{
+		return false;
+	}
+	Stored = Id;
+	return true;
 }
 
 void AVoxelChunk::RebuildMesh()

@@ -38,10 +38,12 @@ public:
 	FBlockId GetBlockOrNeighbor(const FIntVector& Local) const;
 
 	/**
-	 * Changes one block. Ignored (with an ensure) for coordinates outside the chunk and ids not in the catalog.
-	 * Does not update the visuals; call RedrawBlock() for the changed cells, or RebuildMesh() after many changes.
+	 * Changes one block. Returns true if the block changed; false if the cell already held this id, and
+	 * false (with an ensure) for coordinates outside the chunk and ids not in the catalog.
+	 * Does not update the visuals. After one change, the cell and its six neighbors must be redrawn, and some
+	 * neighbors may lie in other chunks: AVoxelWorld::SetBlockAndRedraw does both. After many changes, call RebuildMesh().
 	 */
-	void SetBlock(const FIntVector& Local, FBlockId Id);
+	bool SetBlock(const FIntVector& Local, FBlockId Id);
 
 	/** Redraws all cubes from the block array, e.g. once after the world is filled. */
 	void RebuildMesh();

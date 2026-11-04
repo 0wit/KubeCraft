@@ -86,25 +86,7 @@ struct FTestVoxelWorld
 	/** Id of a block type in the test catalog. */
 	FBlockId IdOf(const UBlockDefinition* Block) const { return World->Catalog->GetId(Block); }
 
-	/** Number of cubes a chunk draws right now, i.e. its blocks that touch Air. */
-	int32 CountDrawnCubes(const FIntPoint& ChunkCoord) const
-	{
-		const AVoxelChunk* Chunk = World->FindChunk(ChunkCoord);
-		if (!Chunk)
-		{
-			return 0;
-		}
-		TArray<UInstancedStaticMeshComponent*> Meshes;
-		Chunk->GetComponents(Meshes);
-		int32 Count = 0;
-		for (const UInstancedStaticMeshComponent* Mesh : Meshes)
-		{
-			Count += Mesh->GetInstanceCount();
-		}
-		return Count;
-	}
-
-	/** What all chunks draw right now: which mesh draws the cube of each block, and how many cubes there are. */
+	/** What is drawn right now: which mesh draws the cube of each block, and how many cubes there are. */
 	struct FDrawnCubes
 	{
 		/** Key: world block coordinate. A block drawn twice appears only once here, but counts twice below. */
@@ -112,30 +94,30 @@ struct FTestVoxelWorld
 		int32 CubeCount = 0;
 	};
 
-	/** Reads the cubes back from the meshes themselves, so the result shows what is really drawn. */
+	/** What all chunks draw, read back from the meshes themselves, so the result shows what is really drawn. */
 	FDrawnCubes GetDrawnCubes() const
 	{
 		FDrawnCubes Drawn;
 		for (const TPair<FIntPoint, TObjectPtr<AVoxelChunk>>& Pair : World->Chunks)
 		{
-			TArray<UInstancedStaticMeshComponent*> Meshes;
-			Pair.Value->GetComponents(Meshes);
-			for (const UInstancedStaticMeshComponent* Mesh : Meshes)
-			{
-				for (int32 Instance = 0; Instance < Mesh->GetInstanceCount(); ++Instance)
-				{
-					FTransform Transform;
-					Mesh->GetInstanceTransform(Instance, Transform, /*bWorldSpace*/ true);
-					Drawn.MeshPerBlock.Add(KubeCraft::Voxel::WorldToBlock(Transform.GetLocation()), Mesh);
-					++Drawn.CubeCount;
-				}
-			}
+			AddDrawnCubes(*Pair.Value, Drawn);
 		}
 		return Drawn;
 	}
 
+	/** Number of cubes a chunk draws right now, i.e. its blocks that touch Air. */
+	int32 CountDrawnCubes(const FIntPoint& ChunkCoord) const
+	{
+		FDrawnCubes Drawn;
+		if (const AVoxelChunk* Chunk = World->FindChunk(ChunkCoord))
+		{
+			AddDrawnCubes(*Chunk, Drawn);
+		}
+		return Drawn.CubeCount;
+	}
+
 	/** Redraws every chunk from scratch - the reference that block-by-block redraws must match. */
-	void RebuildAllChunks() const
+	void RebuildAllChunks()
 	{
 		for (const TPair<FIntPoint, TObjectPtr<AVoxelChunk>>& Pair : World->Chunks)
 		{
@@ -144,6 +126,23 @@ struct FTestVoxelWorld
 	}
 
 private:
+	/** Adds every cube drawn by one chunk's meshes to Drawn. */
+	static void AddDrawnCubes(const AVoxelChunk& Chunk, FDrawnCubes& Drawn)
+	{
+		TArray<UInstancedStaticMeshComponent*> Meshes;
+		Chunk.GetComponents(Meshes);
+		for (const UInstancedStaticMeshComponent* Mesh : Meshes)
+		{
+			for (int32 Instance = 0; Instance < Mesh->GetInstanceCount(); ++Instance)
+			{
+				FTransform Transform;
+				Mesh->GetInstanceTransform(Instance, Transform, /*bWorldSpace*/ true);
+				Drawn.MeshPerBlock.Add(KubeCraft::Voxel::WorldToBlock(Transform.GetLocation()), Mesh);
+				++Drawn.CubeCount;
+			}
+		}
+	}
+
 	static FBlockHeightBand MakeBand(int32 MaxZ, UBlockDefinition* Block)
 	{
 		FBlockHeightBand Band;
