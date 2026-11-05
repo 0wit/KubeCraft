@@ -127,8 +127,8 @@ bool UChunkMeshComponent::IsSolidNeighbor(const AVoxelChunk& Chunk, const FIntVe
 	{
 		return true;
 	}
-	// Across a chunk border the chunk asks the world. Beyond the edge of the world that is Air,
-	// so the outer walls of the world stay drawn.
+	// Across a chunk border the chunk asks the world. A chunk that is not loaded counts as Air, which is why
+	// the streaming loads all four neighbors before it draws a chunk.
 	return Chunk.GetBlockOrNeighbor(Local) != AirBlockId;
 }
 

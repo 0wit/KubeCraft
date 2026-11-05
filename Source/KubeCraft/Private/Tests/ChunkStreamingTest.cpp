@@ -59,9 +59,10 @@ namespace
 }
 
 /**
- * Checks UChunkStreamingComponent with AVoxelWorld: the right chunks are loaded and drawn around a center, borders
- * between chunks show no wall, the per-frame limit holds, far chunks unload (with one ring of slack), and player
- * changes come back when an unloaded chunk loads again.
+ * Checks UChunkStreamingComponent with AVoxelWorld: Generate draws the start and switches the streaming on, the right
+ * chunks are loaded and drawn around a center, borders between chunks show no wall, the per-frame limit holds for
+ * loads, draws and unloads, far chunks unload (with one ring of slack), and player changes come back when an unloaded
+ * chunk loads again - while a block set back to its terrain value is forgotten.
  */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FChunkStreamingTest, "KubeCraft.Integration.ChunkStreaming",
 	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
@@ -93,9 +94,10 @@ bool FChunkStreamingTest::RunTest(const FString& Parameters)
 		}
 	};
 
-	// 1. Start: everything around chunk (0, 0) at once.
+	// 1. Start: Generate draws everything around chunk (0, 0) at once, then lets the streaming follow the player.
 	const FIntPoint Start(0, 0);
-	Streaming.LoadAllAround(Start);
+	World.Generate();
+	TestTrue(TEXT("Start: streaming ticks"), Streaming.IsComponentTickEnabled());
 	TestTrue(TEXT("Start: loaded = drawn + their neighbors"),
 		SameChunks(LoadedChunks(World), WithNeighbors(ChunksWithin(Start, View))));
 	TestTrue(TEXT("Start: drawn up to ViewDistance"), SameChunks(DrawnChunks(World), ChunksWithin(Start, View)));
@@ -108,12 +110,24 @@ bool FChunkStreamingTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Mine"), World.MineBlock(Hole));
 	TestTrue(TEXT("Place"), World.PlaceBlock(Placed, Test.Snow));
 	const int32 DrawnWithChanges = Test.CountDrawnCubes(Start);
+	TestEqual(TEXT("Both changes remembered"), Test.CountRememberedChanges(), 2);
+
+	// A block on the far side of the outermost drawn chunk: its neighbor block lies in a chunk that is loaded but not
+	// drawn yet. Mining it must not draw a lone cube there - that chunk draws everything at once, later.
+	const FIntPoint Undrawn(View + 1, 0);
+	const FIntVector PutBack(KubeCraft::Voxel::ChunkSize * Undrawn.X - 1, 3, Top);
+	TestTrue(TEXT("Mine next to a chunk that is not drawn"), World.MineBlock(PutBack));
+	TestEqual(TEXT("Chunk that is not drawn stays empty"), Test.CountDrawnCubes(Undrawn), 0);
+
+	// The block mined and put back as the same type is terrain again, so there is nothing to remember.
+	TestTrue(TEXT("Put the stone back"), World.PlaceBlock(PutBack, Test.Stone));
+	TestEqual(TEXT("Put-back block forgotten"), Test.CountRememberedChanges(), 2);
 
 	// 3. One chunk to the side: a neighbor of the old edge, now ViewDistance + 2 away, stays loaded (the slack ring).
 	Streaming.UpdateAround(FIntPoint(1, 0), MAX_int32);
 	TestTrue(TEXT("Slack ring stays loaded"), World.IsChunkLoaded(FIntPoint(-(View + 1), 0)));
 
-	// 4. Far away, at most one chunk of work per call.
+	// 4. Far away, at most one chunk of work (load, draw or unload) per call.
 	const FIntPoint Far(10, 0);
 	bool bFinished = false;
 	int32 Calls = 0;
@@ -130,7 +144,9 @@ bool FChunkStreamingTest::RunTest(const FString& Parameters)
 		{
 			FirstDrawn = *NewlyDrawn.CreateConstIterator();
 		}
-		const int32 Work = LoadedChunks(World).Difference(LoadedBefore).Num() + NewlyDrawn.Num();
+		const TSet<FIntPoint> LoadedAfter = LoadedChunks(World);
+		const int32 Work = LoadedAfter.Difference(LoadedBefore).Num() + LoadedBefore.Difference(LoadedAfter).Num()
+			+ NewlyDrawn.Num();
 		if (Work > 1)
 		{
 			AddError(FString::Printf(TEXT("Call %d did %d chunks of work, the limit is 1"), Calls, Work));

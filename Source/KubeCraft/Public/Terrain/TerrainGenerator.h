@@ -63,6 +63,12 @@ struct KUBECRAFT_API FTerrainGenerator
 	 */
 	TArray<FBlockId> GenerateChunk(const FIntPoint& ChunkCoord, const UBlockCatalog& Catalog) const;
 
+	/**
+	 * The block the terrain puts at one world block coordinate, before any player change - the same answer as
+	 * GenerateChunk, for a single block. Air above the surface and outside the world.
+	 */
+	FBlockId GetTerrainBlock(const FIntVector& Block, const UBlockCatalog& Catalog) const;
+
 private:
 	FTerrainSettings Settings;
 

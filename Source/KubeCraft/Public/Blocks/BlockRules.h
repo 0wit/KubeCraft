@@ -6,7 +6,7 @@ class AVoxelWorld;
 
 /**
  * The game's limits for changing blocks: which blocks may be mined and where a block may be placed.
- * All limits live here (floor, ceiling, edge of the world, "not inside a player"), so they are easy to find and change.
+ * All limits live here (floor, ceiling, only in loaded chunks, "not inside a player"), so they are easy to find and change.
  *
  *   FBlockRules Rules(World);
  *   if (Rules.CanMine(Block)) { ... }

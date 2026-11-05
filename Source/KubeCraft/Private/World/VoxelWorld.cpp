@@ -31,24 +31,30 @@ void AVoxelWorld::Generate()
 		return;
 	}
 
+	PrepareTerrain();
+
+	// Everything around the start at once, so the player has ground under their feet; the rest follows them.
+	Streaming->LoadAllAround(FIntPoint::ZeroValue);
+	Streaming->SetComponentTickEnabled(true);
+}
+
+void AVoxelWorld::PrepareTerrain()
+{
 	if (bRandomSeed)
 	{
 		// The clock counts in 100 ns steps, so its lowest 32 bits are different on every start.
 		Seed = static_cast<int32>(FDateTime::Now().GetTicks());
 	}
 	UE_LOG(LogKubeCraft, Log, TEXT("World seed: %d"), Seed);
-
-	// Everything around the start at once, so the players have ground under their feet; the rest follows them.
-	Streaming->LoadAllAround(FIntPoint::ZeroValue);
-	Streaming->SetComponentTickEnabled(true);
+	Generator.Emplace(Seed, Terrain);
 }
 
 void AVoxelWorld::LoadChunk(const FIntPoint& ChunkCoord)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ChunkLoad);
 
-	// Without a catalog or a block mesh nothing could be drawn; Generate reports that once.
-	if (!Catalog || !BlockMesh || FindChunk(ChunkCoord))
+	// Generate makes the generator only once the catalog and the block mesh are known to be set.
+	if (!ensureMsgf(Generator, TEXT("%s: LoadChunk before Generate"), *GetName()) || FindChunk(ChunkCoord))
 	{
 		return;
 	}
@@ -64,7 +70,7 @@ void AVoxelWorld::LoadChunk(const FIntPoint& ChunkCoord)
 	Chunk->Initialize(*this, ChunkCoord);
 
 	// The same seed always makes the same terrain, so only the player's changes need to be kept.
-	Chunk->SetAllBlocks(FTerrainGenerator(Seed, Terrain).GenerateChunk(ChunkCoord, *Catalog));
+	Chunk->SetAllBlocks(Generator->GenerateChunk(ChunkCoord, *Catalog));
 	if (const TMap<FIntVector, FBlockId>* Changes = ChangedBlocks.Find(ChunkCoord))
 	{
 		for (const TPair<FIntVector, FBlockId>& Change : *Changes)
@@ -168,14 +174,12 @@ bool AVoxelWorld::PlaceBlock(const FIntVector& Block, const UBlockDefinition* Ty
 
 bool AVoxelWorld::SetBlockAndRedraw(const FIntVector& Block, FBlockId Id)
 {
-	const FIntPoint ChunkCoord = BlockToChunk(Block);
-	AVoxelChunk* Chunk = FindChunk(ChunkCoord);
-	const FIntVector Local = BlockToLocal(Block);
-	if (!Chunk || !Chunk->SetBlock(Local, Id))
+	AVoxelChunk* Chunk = FindChunk(BlockToChunk(Block));
+	if (!Chunk || !Chunk->SetBlock(BlockToLocal(Block), Id))
 	{
 		return false;
 	}
-	ChangedBlocks.FindOrAdd(ChunkCoord).Add(Local, Id);
+	RememberChange(Block, Id);
 
 	// Only the block itself and the six blocks touching it can appear or disappear.
 	RedrawBlock(Block);
@@ -184,6 +188,26 @@ bool AVoxelWorld::SetBlockAndRedraw(const FIntVector& Block, FBlockId Id)
 		RedrawBlock(Block + Offset);
 	}
 	return true;
+}
+
+void AVoxelWorld::RememberChange(const FIntVector& Block, FBlockId Id)
+{
+	// A loaded chunk means Generate has made the generator.
+	const FIntPoint ChunkCoord = BlockToChunk(Block);
+	const FIntVector Local = BlockToLocal(Block);
+	if (Id != Generator->GetTerrainBlock(Block, *Catalog))
+	{
+		ChangedBlocks.FindOrAdd(ChunkCoord).Add(Local, Id);
+		return;
+	}
+	if (TMap<FIntVector, FBlockId>* Changes = ChangedBlocks.Find(ChunkCoord))
+	{
+		Changes->Remove(Local);
+		if (Changes->IsEmpty())
+		{
+			ChangedBlocks.Remove(ChunkCoord);
+		}
+	}
 }
 
 void AVoxelWorld::RedrawBlock(const FIntVector& Block)

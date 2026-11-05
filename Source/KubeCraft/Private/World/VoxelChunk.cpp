@@ -68,13 +68,20 @@ void AVoxelChunk::SetAllBlocks(TArray<FBlockId>&& NewBlocks)
 	{
 		return;
 	}
-	// Same promise as SetBlock: every stored id must be drawable.
+	// Same promise as SetBlock: every stored id must be drawable. A chunk holds only a few block types,
+	// so the catalog is asked once per type, not once per block.
+	bool bChecked[MaxBlockId + 1] = {};
 	for (const FBlockId Id : NewBlocks)
 	{
+		if (bChecked[Id])
+		{
+			continue;
+		}
 		if (!ensureMsgf(IsKnownBlock(Id), TEXT("SetAllBlocks with block id %d, which is not in the catalog"), Id))
 		{
 			return;
 		}
+		bChecked[Id] = true;
 	}
 	Blocks = MoveTemp(NewBlocks);
 }

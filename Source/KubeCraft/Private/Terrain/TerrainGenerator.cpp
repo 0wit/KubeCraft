@@ -75,3 +75,12 @@ TArray<FBlockId> FTerrainGenerator::GenerateChunk(const FIntPoint& ChunkCoord, c
 	}
 	return Blocks;
 }
+
+FBlockId FTerrainGenerator::GetTerrainBlock(const FIntVector& Block, const UBlockCatalog& Catalog) const
+{
+	if (Block.Z < 0 || Block.Z >= GetSurfaceHeight(Block.X, Block.Y))
+	{
+		return AirBlockId;
+	}
+	return Catalog.GetIdForHeight(Block.Z);
+}

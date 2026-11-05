@@ -20,7 +20,7 @@
  *
  * Layout: 2 x 2 chunks, so blocks X and Y run from -16 to 15 (FirstBlock, LastBlock) and X = -1 | 0 is a chunk border.
  * They are loaded and drawn directly, without the streaming component, so the world has a fixed edge to test.
- * (EChunks::None starts without chunks instead, for testing the streaming itself.)
+ * (EChunks::None starts without chunks and seed instead; the test calls Generate, for testing the streaming itself.)
  * The ground is flat: every column is bedrock at Z 0 and stone at Z 1..3; Z 4 and up is Air.
  * Snow is in the catalog but not in the ground, so a test can place a type that no chunk has drawn yet.
  *
@@ -37,7 +37,7 @@ struct FTestVoxelWorld
 	enum class EChunks
 	{
 		TwoByTwo,	// The layout above.
-		None,		// No chunks: the test loads them, e.g. through the streaming component.
+		None,		// No chunks and no seed yet: the test calls AVoxelWorld::Generate itself.
 	};
 
 	/** Chunks along X and Y. Even, so block (0, 0) is in the middle of the world. */
@@ -87,6 +87,7 @@ struct FTestVoxelWorld
 		}
 
 		// Chunks from -Size/2 to Size/2 - 1. All are loaded before any is drawn, so the borders see their neighbors.
+		World->PrepareTerrain();
 		const int32 FirstChunk = -SizeInChunks / 2;
 		for (int32 Y = FirstChunk; Y < FirstChunk + SizeInChunks; ++Y)
 		{
@@ -116,6 +117,17 @@ struct FTestVoxelWorld
 
 	/** The voxel world's streaming component (private in AVoxelWorld). */
 	UChunkStreamingComponent* GetStreaming() const { return World->Streaming; }
+
+	/** Number of player changes the voxel world remembers, over all chunks (loaded or not). */
+	int32 CountRememberedChanges() const
+	{
+		int32 Count = 0;
+		for (const TPair<FIntPoint, TMap<FIntVector, FBlockId>>& Pair : World->ChangedBlocks)
+		{
+			Count += Pair.Value.Num();
+		}
+		return Count;
+	}
 
 	/** Id of a block type in the test catalog. */
 	FBlockId IdOf(const UBlockDefinition* Block) const { return World->Catalog->GetId(Block); }

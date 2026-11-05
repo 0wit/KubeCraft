@@ -14,8 +14,14 @@ namespace
 		FIntPoint(0, 0), FIntPoint(1, 0), FIntPoint(-1, 0), FIntPoint(0, 1), FIntPoint(0, -1),
 	};
 
+	/**
+	 * Chunks past ViewDistance that stay loaded: one ring for the neighbors of the drawn chunks (their border cubes
+	 * look into them), and one ring of slack, so walking back and forth over a border reloads nothing.
+	 */
+	constexpr int32 UnloadMarginInChunks = 2;
+
 	/** Every chunk offset within Radius chunks of (0, 0) (a circle), nearest first. */
-	TArray<FIntPoint> GetOffsetsNearestFirst(int32 Radius)
+	TArray<FIntPoint> MakeOffsetsNearestFirst(int32 Radius)
 	{
 		TArray<FIntPoint> Offsets;
 		for (int32 Y = -Radius; Y <= Radius; ++Y)
@@ -80,20 +86,22 @@ bool UChunkStreamingComponent::UpdateAround(const FIntPoint& CenterChunk, int32 
 	{
 		return true;
 	}
-	// 1. Unload the far chunks. Destroying an actor is cheap, so all of them at once.
-	const int32 UnloadDistance = ViewDistanceInChunks + 2;
-	for (const FIntPoint& Coord : World->GetLoadedChunks())
-	{
-		if ((Coord - CenterChunk).SizeSquared() > UnloadDistance * UnloadDistance)
-		{
-			World->UnloadChunk(Coord);
-		}
-	}
 
-	// 2. Draw, nearest first, so the ground under the player comes first. A chunk's border cubes look into its
+	// Every load, draw and unload uses up one chunk of this call's budget.
+	int32 ChunksLeft = MaxChunks;
+	auto TakeOneChunk = [&ChunksLeft]()
+	{
+		if (ChunksLeft <= 0)
+		{
+			return false;
+		}
+		--ChunksLeft;
+		return true;
+	};
+
+	// 1. Draw, nearest first, so the ground under the player comes first. A chunk's border cubes look into its
 	//    four neighbors, so the chunk and its neighbors are loaded right before it is drawn.
-	int32 Done = 0;
-	for (const FIntPoint& Offset : GetOffsetsNearestFirst(ViewDistanceInChunks))
+	for (const FIntPoint& Offset : GetOffsetsNearestFirst())
 	{
 		const FIntPoint Coord = CenterChunk + Offset;
 		if (World->IsChunkDrawn(Coord))
@@ -104,20 +112,42 @@ bool UChunkStreamingComponent::UpdateAround(const FIntPoint& CenterChunk, int32 
 		{
 			if (!World->IsChunkLoaded(Coord + Step))
 			{
-				if (Done == MaxChunks)
+				if (!TakeOneChunk())
 				{
 					return false;
 				}
 				World->LoadChunk(Coord + Step);
-				++Done;
 			}
 		}
-		if (Done == MaxChunks)
+		if (!TakeOneChunk())
 		{
 			return false;
 		}
 		World->DrawChunk(Coord);
-		++Done;
+	}
+
+	// 2. Unload the far chunks - after drawing, so new ground never waits for old chunks to go.
+	const int32 UnloadDistance = ViewDistanceInChunks + UnloadMarginInChunks;
+	for (const FIntPoint& Coord : World->GetLoadedChunks())
+	{
+		if ((Coord - CenterChunk).SizeSquared() > UnloadDistance * UnloadDistance)
+		{
+			if (!TakeOneChunk())
+			{
+				return false;
+			}
+			World->UnloadChunk(Coord);
+		}
 	}
 	return true;
+}
+
+const TArray<FIntPoint>& UChunkStreamingComponent::GetOffsetsNearestFirst()
+{
+	if (OffsetsRadius != ViewDistanceInChunks)
+	{
+		OffsetsNearestFirst = MakeOffsetsNearestFirst(ViewDistanceInChunks);
+		OffsetsRadius = ViewDistanceInChunks;
+	}
+	return OffsetsNearestFirst;
 }

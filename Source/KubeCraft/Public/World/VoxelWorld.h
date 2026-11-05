@@ -30,7 +30,7 @@ public:
 	/** Creates the world actor with its streaming component; it has no visuals of its own. */
 	AVoxelWorld();
 
-	/** Picks the seed, then loads and draws the chunks around block (0, 0) at once. Call once, before players are placed. */
+	/** Picks the seed, then loads and draws the chunks around block (0, 0) at once. Call once, before the player is placed. */
 	void Generate();
 
 	/** Block at a world block coordinate. Air where no chunk is loaded and above or below the world. */
@@ -64,7 +64,7 @@ public:
 
 	/**
 	 * Creates a chunk and fills it: terrain from the seed, then the remembered player changes. Does not draw it,
-	 * because its border cubes need the neighbor chunks. Does nothing if it is already loaded.
+	 * because its border cubes need the neighbor chunks. Does nothing if it is already loaded or Generate has not run.
 	 */
 	void LoadChunk(const FIntPoint& ChunkCoord);
 
@@ -91,6 +91,15 @@ private:
 
 	/** Chunk at a chunk coordinate, or null if it is not loaded. */
 	AVoxelChunk* FindChunk(const FIntPoint& ChunkCoord) const;
+
+	/** Picks the seed (if bRandomSeed is on) and makes the terrain generator from it. Part of Generate. */
+	void PrepareTerrain();
+
+	/**
+	 * Remembers a player change for when its chunk loads again. A block set back to what the terrain had there
+	 * is forgotten instead, because the terrain makes it again by itself.
+	 */
+	void RememberChange(const FIntVector& Block, FBlockId Id);
 
 	/**
 	 * Changes one block, remembers the change and redraws the block and its six neighbors - nothing else can change.
@@ -125,6 +134,9 @@ private:
 	/** Shape of the hills. */
 	UPROPERTY(EditAnywhere, Category = "KubeCraft|World")
 	FTerrainSettings Terrain;
+
+	/** Made once from Seed and Terrain by Generate, so every chunk gets the same land - even if they are edited later. */
+	TOptional<FTerrainGenerator> Generator;
 
 	/** Every loaded chunk, by chunk coordinate. */
 	UPROPERTY(Transient)

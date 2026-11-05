@@ -123,11 +123,13 @@ Example with `ViewDistanceInChunks` = 2:
 
 - When the player walks into another chunk, the missing chunks are drawn nearest first, so the ground under the
   player comes first.
-- At most `MaxChunksPerFrame` chunks are filled or drawn in one frame. So crossing a border does not stop the game.
+- At most `MaxChunksPerFrame` chunks are filled, drawn or unloaded in one frame. So crossing a border does not stop
+  the game. Unloading comes last, so new ground never waits for old chunks to go.
 - At the start, everything around the middle loads at once, before the player is placed.
 
 **Your changes.** A new chunk gets its cubes from the terrain again: same seed → same cubes.
 The world remembers every cube you changed. When a chunk loads again, your changes are put back on top.
+A cube you set back to what the terrain had there (mine stone, place stone) is forgotten: the terrain makes it anyway.
 
 ```
 from the seed     your changes          loaded chunk
@@ -150,6 +152,7 @@ noise 0.25  →  20 + 6 = 26 cubes high
 ```
 
 - For a new chunk, the generator makes all its cubes: each column is solid up to its height.
+- It is made once, when the game starts. So all chunks get the same land, even if the settings are edited while playing.
 
 ## Blocks and height
 

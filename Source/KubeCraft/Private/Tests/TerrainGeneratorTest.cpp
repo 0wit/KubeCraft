@@ -1,5 +1,6 @@
 #include "Misc/AutomationTest.h"
 #include "Terrain/TerrainGenerator.h"
+#include "Tests/TestVoxelWorld.h"
 #include "World/VoxelTypes.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -51,6 +52,50 @@ bool FTerrainGeneratorTest::RunTest(const FString& Parameters)
 	Extreme.BaseHeight = -1000;
 	TestEqual(TEXT("Too low -> clamped to the floor"), FTerrainGenerator(1, Extreme).GetSurfaceHeight(0, 0), 1);
 
+	return true;
+}
+
+/**
+ * Checks that FTerrainGenerator::GetTerrainBlock (one block) gives the same answer as GenerateChunk (a whole chunk) on
+ * hilly land, so the voxel world can trust it to tell whether a player change put a block back to its terrain value.
+ */
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTerrainBlockTest, "KubeCraft.Terrain.TerrainBlock",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTerrainBlockTest::RunTest(const FString& Parameters)
+{
+	using namespace KubeCraft::Voxel;
+
+	// Only for its catalog: bedrock at the bottom, stone above it.
+	const FTestVoxelWorld Test(FTestVoxelWorld::EChunks::None);
+	if (!TestNotNull(TEXT("Test world"), Test.World))
+	{
+		return false;
+	}
+	const UBlockCatalog& Catalog = *Test.World->GetCatalog();
+	const FTerrainGenerator Generator(42, FTerrainSettings());
+
+	// A chunk on each side of the origin, so negative coordinates are covered too.
+	for (const FIntPoint& ChunkCoord : { FIntPoint(0, 0), FIntPoint(-1, -2) })
+	{
+		const TArray<FBlockId> Blocks = Generator.GenerateChunk(ChunkCoord, Catalog);
+		const FIntVector Origin = ChunkToBlockOrigin(ChunkCoord);
+		int32 Mismatches = 0;
+		for (int32 Z = 0; Z < ChunkHeight; ++Z)
+		{
+			for (int32 Y = 0; Y < ChunkSize; ++Y)
+			{
+				for (int32 X = 0; X < ChunkSize; ++X)
+				{
+					const FIntVector Local(X, Y, Z);
+					Mismatches += Blocks[LocalToIndex(Local)] != Generator.GetTerrainBlock(Origin + Local, Catalog);
+				}
+			}
+		}
+		TestEqual(FString::Printf(TEXT("Chunk %s: GetTerrainBlock = GenerateChunk"), *ChunkCoord.ToString()),
+			Mismatches, 0);
+	}
+	TestEqual(TEXT("Below the floor is Air"), Generator.GetTerrainBlock(FIntVector(0, 0, -1), Catalog), AirBlockId);
 	return true;
 }
 

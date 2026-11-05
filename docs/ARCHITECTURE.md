@@ -121,10 +121,11 @@ docs/                      ARCHITECTURE.md (this page), WORLD.md, PLAYER.md
 | `KubeCraft.World.Coordinates`             | `World/VoxelTypes.h`       | Position conversions, also negative ones. Which cube a hit means                                            |
 | `KubeCraft.Blocks.HeightBands`            | `Blocks/BlockCatalog`      | Which block goes at which height                                                                            |
 | `KubeCraft.Terrain.Generator`             | `Terrain/TerrainGenerator` | Same seed → same hills. Other seed → other hills                                                            |
+| `KubeCraft.Terrain.TerrainBlock`          | `Terrain/TerrainGenerator` | The cube at one spot is the same as in the whole generated chunk                                            |
 | `KubeCraft.Integration.BlockRules`        | `Blocks/BlockRules`        | What may be mined, where a block may be placed                                                              |
 | `KubeCraft.Integration.MineAndPlace`      | `World/VoxelWorld`         | Mining and placing can change blocks. Placed type is the given type. A border change redraws the next chunk |
 | `KubeCraft.Integration.IncrementalRedraw` | `Rendering/`               | After many changes, only cubes that touch air are drawn, each with its right type                           |
-| `KubeCraft.Integration.ChunkStreaming`    | `World/ChunkStreaming…`    | The right chunks load, draw and unload. No walls between chunks. A few per call. Changes come back          |
+| `KubeCraft.Integration.ChunkStreaming`    | `World/ChunkStreaming…`    | Start draws the middle. Right chunks load, draw, unload. No walls. A few per call. Changes come back        |
 
 [↑ Contents](#contents)
 
