@@ -5,12 +5,14 @@
 ## Contents
 
 [Why chunks?](#why-chunks) · [Positions](#positions) · [Chunk](#chunk) ([Chunk borders](#chunk-borders))
-· [Redrawing after a change](#redrawing-after-a-change) · [Terrain](#terrain) · [Blocks and height](#blocks-and-height)
+· [Redrawing after a change](#redrawing-after-a-change) · [Streaming](#streaming) · [Terrain](#terrain)
+· [Blocks and height](#blocks-and-height)
 
 ## Why chunks?
 
 Performance. The world is split into small pieces, so a change touches only one piece, not the whole world.
-At the start, every chunk draws all its cubes once. After that, a change redraws only **7 cubes**.
+A new chunk draws all its cubes once. After that, a change redraws only **7 cubes**.
+Only the chunks near the player exist, so the world has no edge.
 
 ## Positions
 
@@ -53,8 +55,8 @@ A cube at the edge of a chunk has a neighbor in the next chunk. The chunk asks t
  cube 15: "is cube 0 solid?" → yes → the side between them is hidden
 ```
 
-- All chunks are filled before any is drawn, so cube 0 already exists when cube 15 asks.
-- At the edge of the world there is no neighbor. It counts as air, so the outer wall is drawn.
+- A chunk is drawn only after its 4 neighbors are filled, so cube 0 already exists when cube 15 asks.
+- Where no chunk is loaded, there is no neighbor. It counts as air.
 - A change at a chunk's edge also redraws the touching cube in the next chunk.
 
 ## Redrawing after a change
@@ -93,8 +95,45 @@ after      0:A  1:D  2:C
 
 Only D got a new number, so the mesh updates just one note ("D is number 1").
 
-- At the start, each chunk draws all its cubes at once.
+- A new chunk draws all its cubes at once.
 - Type `stat KubeCraft` in the game console. Read the **Max** column for a speed measurement.
+
+## Streaming
+
+`UChunkStreamingComponent` (on `BP_VoxelWorld`)
+
+Only the chunks near the player exist. Distance is counted in chunks from the player's chunk, as a circle.
+Example with `ViewDistanceInChunks` = 2:
+
+```
+ . . . F . . .     P = the player's chunk
+ . . F D F . .     D = drawn
+ . F D D D F .     F = filled, not drawn (next to a drawn chunk)
+ F D D P D D F     . = not loaded
+ . F D D D F .
+ . . F D F . .
+ . . . F . . .
+```
+
+| Distance           | What happens                                                              |
+| ------------------ | ------------------------------------------------------------------------- |
+| Up to ViewDistance | Drawn. Its 4 neighbors are filled just before, for its borders            |
+| ViewDistance + 2   | Kept if it is there. Walking back and forth over a border reloads nothing |
+| More               | Unloaded (destroyed)                                                      |
+
+- When the player walks into another chunk, the missing chunks are drawn nearest first, so the ground under the
+  player comes first.
+- At most `MaxChunksPerFrame` chunks are filled or drawn in one frame. So crossing a border does not stop the game.
+- At the start, everything around the middle loads at once, before the player is placed.
+
+**Your changes.** A new chunk gets its cubes from the terrain again: same seed → same cubes.
+The world remembers every cube you changed. When a chunk loads again, your changes are put back on top.
+
+```
+from the seed     your changes          loaded chunk
+ 3 3 3 3          2nd cube: air          3 . 3 3
+ 2 2 2 2                                 2 2 2 2
+```
 
 ## Terrain
 
@@ -109,6 +148,8 @@ Only D got a new number, so the mesh updates just one note ("D is number 1").
 height = 20 + noise × 24
 noise 0.25  →  20 + 6 = 26 cubes high
 ```
+
+- For a new chunk, the generator makes all its cubes: each column is solid up to its height.
 
 ## Blocks and height
 

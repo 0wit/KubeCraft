@@ -4,14 +4,18 @@
 #include "Blocks/BlockRules.h"
 #include "Engine/World.h"
 #include "KubeCraft.h"
+#include "World/ChunkStreamingComponent.h"
 #include "World/VoxelChunk.h"
 
 using namespace KubeCraft::Voxel;
+
+DECLARE_CYCLE_STAT(TEXT("Chunk Load"), STAT_ChunkLoad, STATGROUP_KubeCraft);
 
 AVoxelWorld::AVoxelWorld()
 {
 	PrimaryActorTick.bCanEverTick = false;
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	Streaming = CreateDefaultSubobject<UChunkStreamingComponent>(TEXT("Streaming"));
 }
 
 void AVoxelWorld::Generate()
@@ -33,61 +37,73 @@ void AVoxelWorld::Generate()
 		Seed = static_cast<int32>(FDateTime::Now().GetTicks());
 	}
 	UE_LOG(LogKubeCraft, Log, TEXT("World seed: %d"), Seed);
-	const FTerrainGenerator Generator(Seed, Terrain);
 
-	// The block type depends only on the height, so look it up once per height instead of once per block.
-	TArray<FBlockId> BlockIdPerHeight;
-	BlockIdPerHeight.SetNumUninitialized(ChunkHeight);
-	for (int32 Z = 0; Z < ChunkHeight; ++Z)
-	{
-		BlockIdPerHeight[Z] = Catalog->GetIdForHeight(Z);
-	}
-
-	// Chunks from -Size/2 to Size/2 - 1 on each axis, so block (0, 0) is at the center of the world.
-	const int32 FirstChunk = -WorldSizeInChunks / 2;
-	for (int32 Y = 0; Y < WorldSizeInChunks; ++Y)
-	{
-		for (int32 X = 0; X < WorldSizeInChunks; ++X)
-		{
-			SpawnChunk(FIntPoint(FirstChunk + X, FirstChunk + Y), Generator, BlockIdPerHeight);
-		}
-	}
-
-	// Draw only after every chunk is filled, so the faces on chunk borders can look into the neighbor.
-	for (const TPair<FIntPoint, TObjectPtr<AVoxelChunk>>& Pair : Chunks)
-	{
-		Pair.Value->RebuildMesh();
-	}
+	// Everything around the start at once, so the players have ground under their feet; the rest follows them.
+	Streaming->LoadAllAround(FIntPoint::ZeroValue);
+	Streaming->SetComponentTickEnabled(true);
 }
 
-void AVoxelWorld::SpawnChunk(const FIntPoint& ChunkCoord, const FTerrainGenerator& Generator,
-	const TArray<FBlockId>& BlockIdPerHeight)
+void AVoxelWorld::LoadChunk(const FIntPoint& ChunkCoord)
 {
-	const FIntVector Origin = ChunkToBlockOrigin(ChunkCoord);
+	SCOPE_CYCLE_COUNTER(STAT_ChunkLoad);
+
+	// Without a catalog or a block mesh nothing could be drawn; Generate reports that once.
+	if (!Catalog || !BlockMesh || FindChunk(ChunkCoord))
+	{
+		return;
+	}
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
-	AVoxelChunk* Chunk = GetWorld()->SpawnActor<AVoxelChunk>(BlockToWorldCorner(Origin), FRotator::ZeroRotator, SpawnParams);
+	AVoxelChunk* Chunk = GetWorld()->SpawnActor<AVoxelChunk>(
+		BlockToWorldCorner(ChunkToBlockOrigin(ChunkCoord)), FRotator::ZeroRotator, SpawnParams);
 	if (!ensureMsgf(Chunk, TEXT("%s: could not spawn chunk %s"), *GetName(), *ChunkCoord.ToString()))
 	{
 		return;
 	}
 	Chunk->Initialize(*this, ChunkCoord);
 
-	// Fill each column from the bottom up to the ground height; the height bands pick the block type.
-	for (int32 Y = 0; Y < ChunkSize; ++Y)
+	// The same seed always makes the same terrain, so only the player's changes need to be kept.
+	Chunk->SetAllBlocks(FTerrainGenerator(Seed, Terrain).GenerateChunk(ChunkCoord, *Catalog));
+	if (const TMap<FIntVector, FBlockId>* Changes = ChangedBlocks.Find(ChunkCoord))
 	{
-		for (int32 X = 0; X < ChunkSize; ++X)
+		for (const TPair<FIntVector, FBlockId>& Change : *Changes)
 		{
-			const int32 Height = Generator.GetSurfaceHeight(Origin.X + X, Origin.Y + Y);
-			for (int32 Z = 0; Z < Height; ++Z)
-			{
-				Chunk->SetBlock(FIntVector(X, Y, Z), BlockIdPerHeight[Z]);
-			}
+			Chunk->SetBlock(Change.Key, Change.Value);
 		}
 	}
 
 	Chunks.Add(ChunkCoord, Chunk);
+}
+
+void AVoxelWorld::DrawChunk(const FIntPoint& ChunkCoord)
+{
+	if (AVoxelChunk* Chunk = FindChunk(ChunkCoord))
+	{
+		Chunk->RebuildMesh();
+	}
+}
+
+void AVoxelWorld::UnloadChunk(const FIntPoint& ChunkCoord)
+{
+	if (AVoxelChunk* Chunk = FindChunk(ChunkCoord))
+	{
+		Chunk->Destroy();
+	}
+	Chunks.Remove(ChunkCoord);
+}
+
+bool AVoxelWorld::IsChunkDrawn(const FIntPoint& ChunkCoord) const
+{
+	const AVoxelChunk* Chunk = FindChunk(ChunkCoord);
+	return Chunk && Chunk->IsDrawn();
+}
+
+TArray<FIntPoint> AVoxelWorld::GetLoadedChunks() const
+{
+	TArray<FIntPoint> Coords;
+	Chunks.GetKeys(Coords);
+	return Coords;
 }
 
 AVoxelChunk* AVoxelWorld::FindChunk(const FIntPoint& ChunkCoord) const
@@ -152,15 +168,17 @@ bool AVoxelWorld::PlaceBlock(const FIntVector& Block, const UBlockDefinition* Ty
 
 bool AVoxelWorld::SetBlockAndRedraw(const FIntVector& Block, FBlockId Id)
 {
-	AVoxelChunk* Chunk = FindChunk(BlockToChunk(Block));
+	const FIntPoint ChunkCoord = BlockToChunk(Block);
+	AVoxelChunk* Chunk = FindChunk(ChunkCoord);
 	const FIntVector Local = BlockToLocal(Block);
 	if (!Chunk || !Chunk->SetBlock(Local, Id))
 	{
 		return false;
 	}
+	ChangedBlocks.FindOrAdd(ChunkCoord).Add(Local, Id);
 
 	// Only the block itself and the six blocks touching it can appear or disappear.
-	Chunk->RedrawBlock(Local);
+	RedrawBlock(Block);
 	for (const FIntVector& Offset : FaceNeighborOffsets)
 	{
 		RedrawBlock(Block + Offset);
@@ -170,11 +188,11 @@ bool AVoxelWorld::SetBlockAndRedraw(const FIntVector& Block, FBlockId Id)
 
 void AVoxelWorld::RedrawBlock(const FIntVector& Block)
 {
-	// Neighbors below the floor, above the ceiling or past the edge of the world have nothing to draw.
-	// (Same test as IsInsideWorld, but the chunk is needed afterwards, so it is looked up only once.)
+	// Neighbors below the floor, above the ceiling or past the loaded chunks have nothing to draw.
+	// A loaded chunk that is not drawn yet is skipped too: it draws all its cubes once its neighbors are loaded.
 	AVoxelChunk* Chunk = FindChunk(BlockToChunk(Block));
 	const FIntVector Local = BlockToLocal(Block);
-	if (Chunk && IsInsideChunk(Local))
+	if (Chunk && Chunk->IsDrawn() && IsInsideChunk(Local))
 	{
 		Chunk->RedrawBlock(Local);
 	}

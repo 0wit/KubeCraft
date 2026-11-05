@@ -9,7 +9,7 @@ class AVoxelWorld;
 class UChunkMeshComponent;
 
 /**
- * One ChunkSize x ChunkSize x ChunkHeight column of the world, created and filled by AVoxelWorld.
+ * One ChunkSize x ChunkSize x ChunkHeight column of the world, created, filled and destroyed by AVoxelWorld.
  * It remembers its blocks in a flat array of FBlockId (one byte per cube, see LocalToIndex);
  * its UChunkMeshComponent turns them into visible cubes.
  */
@@ -45,8 +45,18 @@ public:
 	 */
 	bool SetBlock(const FIntVector& Local, FBlockId Id);
 
-	/** Redraws all cubes from the block array, e.g. once after the world is filled. */
+	/**
+	 * Replaces every block at once, e.g. with a freshly generated chunk (see FTerrainGenerator::GenerateChunk).
+	 * Needs exactly BlocksPerChunk ids, all known to the catalog; otherwise nothing changes (with an ensure).
+	 * Does not update the visuals.
+	 */
+	void SetAllBlocks(TArray<FBlockId>&& NewBlocks);
+
+	/** Redraws all cubes from the block array, e.g. once after the chunk and its neighbors are filled. */
 	void RebuildMesh();
+
+	/** True once RebuildMesh() has run, i.e. the chunk shows its cubes. */
+	bool IsDrawn() const { return bDrawn; }
 
 	/** Redraws the cube of one cell only, e.g. after it or a neighbor changed. */
 	void RedrawBlock(const FIntVector& Local);
@@ -68,4 +78,7 @@ private:
 
 	/** All blocks of the chunk, indexed by KubeCraft::Voxel::LocalToIndex. */
 	TArray<FBlockId> Blocks;
+
+	/** See IsDrawn(). */
+	bool bDrawn = false;
 };

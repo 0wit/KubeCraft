@@ -1,7 +1,9 @@
 #include "Terrain/TerrainGenerator.h"
 
+#include "Blocks/BlockCatalog.h"
 #include "Math/RandomStream.h"
-#include "World/VoxelTypes.h"
+
+using namespace KubeCraft::Voxel;
 
 namespace
 {
@@ -12,7 +14,7 @@ namespace
 	constexpr int32 MinSurfaceHeight = 1;
 
 	/** Highest allowed ground: one block below the ceiling, so there is always room to build. */
-	constexpr int32 MaxSurfaceHeight = KubeCraft::Voxel::ChunkHeight - 1;
+	constexpr int32 MaxSurfaceHeight = ChunkHeight - 1;
 }
 
 FTerrainGenerator::FTerrainGenerator(int32 Seed, const FTerrainSettings& InSettings)
@@ -46,4 +48,30 @@ int32 FTerrainGenerator::GetSurfaceHeight(int32 BlockX, int32 BlockY) const
 	const double Noise = Sum / MaxSum;
 	const int32 Height = Settings.BaseHeight + FMath::RoundToInt32(Noise * Settings.HeightVariation);
 	return FMath::Clamp(Height, MinSurfaceHeight, MaxSurfaceHeight);
+}
+
+TArray<FBlockId> FTerrainGenerator::GenerateChunk(const FIntPoint& ChunkCoord, const UBlockCatalog& Catalog) const
+{
+	// The block type depends only on the height, so look it up once per height instead of once per block.
+	FBlockId BlockIdPerHeight[ChunkHeight];
+	for (int32 Z = 0; Z < ChunkHeight; ++Z)
+	{
+		BlockIdPerHeight[Z] = Catalog.GetIdForHeight(Z);
+	}
+
+	TArray<FBlockId> Blocks;
+	Blocks.Init(AirBlockId, BlocksPerChunk);
+	const FIntVector Origin = ChunkToBlockOrigin(ChunkCoord);
+	for (int32 Y = 0; Y < ChunkSize; ++Y)
+	{
+		for (int32 X = 0; X < ChunkSize; ++X)
+		{
+			const int32 Height = GetSurfaceHeight(Origin.X + X, Origin.Y + Y);
+			for (int32 Z = 0; Z < Height; ++Z)
+			{
+				Blocks[LocalToIndex(FIntVector(X, Y, Z))] = BlockIdPerHeight[Z];
+			}
+		}
+	}
+	return Blocks;
 }

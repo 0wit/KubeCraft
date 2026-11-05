@@ -61,9 +61,28 @@ bool AVoxelChunk::SetBlock(const FIntVector& Local, FBlockId Id)
 	return true;
 }
 
+void AVoxelChunk::SetAllBlocks(TArray<FBlockId>&& NewBlocks)
+{
+	if (!ensureMsgf(NewBlocks.Num() == BlocksPerChunk, TEXT("SetAllBlocks with %d blocks, expected %d"),
+		NewBlocks.Num(), BlocksPerChunk))
+	{
+		return;
+	}
+	// Same promise as SetBlock: every stored id must be drawable.
+	for (const FBlockId Id : NewBlocks)
+	{
+		if (!ensureMsgf(IsKnownBlock(Id), TEXT("SetAllBlocks with block id %d, which is not in the catalog"), Id))
+		{
+			return;
+		}
+	}
+	Blocks = MoveTemp(NewBlocks);
+}
+
 void AVoxelChunk::RebuildMesh()
 {
 	Mesh->Rebuild();
+	bDrawn = true;
 }
 
 void AVoxelChunk::RedrawBlock(const FIntVector& Local)

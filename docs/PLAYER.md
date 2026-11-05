@@ -23,7 +23,7 @@ Press right mouse   the selected block is put on the face you look at
 | ----------------------------------- | ---------------------- |
 | Bedrock can't be mined              | The floor of the world |
 | No placing at height 64 or more     | The ceiling            |
-| No placing outside the 8 × 8 chunks |                        |
+| No placing outside loaded chunks    | There is nothing there |
 | No placing where a player stands    | You'd be stuck         |
 
 ## Inventory (Blueprint)

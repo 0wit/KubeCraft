@@ -1,7 +1,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "World/VoxelTypes.h"
 #include "TerrainGenerator.generated.h"
+
+class UBlockCatalog;
 
 /**
  * The shape of the hills, edited on the voxel world (BP_VoxelWorld).
@@ -39,8 +42,9 @@ struct FTerrainSettings
 };
 
 /**
- * Decides the shape of the land: for every column of blocks it tells how high the ground is.
- * The answer depends only on the seed, the settings and the column, so a seed always rebuilds the same world.
+ * Decides the land: for every column of blocks it tells how high the ground is, and it fills new chunks with blocks.
+ * The answer depends only on the seed, the settings and the column, so a seed always rebuilds the same world -
+ * which is why a chunk can be unloaded and made again later.
  */
 struct KUBECRAFT_API FTerrainGenerator
 {
@@ -52,6 +56,12 @@ struct KUBECRAFT_API FTerrainGenerator
 	 * Always at least 1 (there is a floor) and below ChunkHeight (there is room to build on top).
 	 */
 	int32 GetSurfaceHeight(int32 BlockX, int32 BlockY) const;
+
+	/**
+	 * The blocks of a chunk as the terrain makes them, before any player change: each column is solid up to its
+	 * surface height, and the catalog's height bands pick the block type. Indexed like a chunk (see LocalToIndex).
+	 */
+	TArray<FBlockId> GenerateChunk(const FIntPoint& ChunkCoord, const UBlockCatalog& Catalog) const;
 
 private:
 	FTerrainSettings Settings;

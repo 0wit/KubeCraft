@@ -21,11 +21,12 @@
 - What a number looks like is set in **data assets** (editor files).
 
 ```
-Game mode ──1. build──▶ World ──▶ Chunk, Chunk, Chunk ...   (8 × 8 chunks)
-    │                    │ │ │      │
-    │                    │ │ │      ├─ "what is 2?" ──▶ Block catalog ──▶ Stone, Grass, Snow, Bedrock
-    │                    │ │ │      └─ Chunk mesh ──▶ Block instances (one per type): draw the cubes
-    │                    │ │ └─ "how high is the ground here?" ──▶ Terrain generator
+Game mode ──1. build──▶ World ──▶ Chunk, Chunk, Chunk ...   (only around the player)
+    │                    │ │ │ │    │
+    │                    │ │ │ │    ├─ "what is 2?" ──▶ Block catalog ──▶ Stone, Grass, Snow, Bedrock
+    │                    │ │ │ │    └─ Chunk mesh ──▶ Block instances (one per type): draw the cubes
+    │                    │ │ │ └─ "which chunks should exist?" ──▶ Chunk streaming (follows the player)
+    │                    │ │ └─ "which cubes does a new chunk have?" ──▶ Terrain generator
     │                    │ └─ "may I change this cube?" ──▶ Block rules
     │                    │
     └──2. place on top──▶ Player ──▶ Mining / Placing ──mine/place──▶ World
@@ -42,11 +43,12 @@ Game mode ──1. build──▶ World ──▶ Chunk, Chunk, Chunk ...   (8 �
 |                                                      | `UBlockCatalog`            | List of block types. Says which block the terrain puts at which height                              | [World → Blocks and height](WORLD.md#blocks-and-height)     |
 |                                                      | `FBlockRules`              | Says if a cube may be mined, or placed somewhere                                                    | [Player → Rules](PLAYER.md#rules)                           |
 | `World/` – where blocks are                          | `VoxelTypes.h`             | Converts positions: cm ↔ cube ↔ chunk                                                               | [World → Positions](WORLD.md#positions)                     |
-|                                                      | `AVoxelWorld`              | Owns all chunks. Fills them. Changes cubes and redraws                                              | [World → Redrawing](WORLD.md#redrawing-after-a-change)      |
+|                                                      | `AVoxelWorld`              | Owns the loaded chunks. Loads, draws, unloads one when asked. Changes cubes, remembers the changes  | [World → Redrawing](WORLD.md#redrawing-after-a-change)      |
+|                                                      | `UChunkStreamingComponent` | Decides which chunks are loaded and drawn around the player, a few per frame                        | [World → Streaming](WORLD.md#streaming)                     |
 |                                                      | `AVoxelChunk`              | One piece of the world. Keeps its numbers                                                           | [World → Chunk](WORLD.md#chunk)                             |
 | `Rendering/` – how blocks are drawn                  | `UChunkMeshComponent`      | Decides which cubes of one chunk are visible, and of which type                                     | [World → Redrawing](WORLD.md#redrawing-after-a-change)      |
 |                                                      | `UBlockInstancesComponent` | Draws all cubes of one type in one chunk. Adds or removes a single cube, knows which cells it draws | [World → Redrawing](WORLD.md#redrawing-after-a-change)      |
-| `Terrain/` – how the hills are made                  | `FTerrainGenerator`        | Says how high the ground is at one spot                                                             | [World → Terrain](WORLD.md#terrain)                         |
+| `Terrain/` – how the hills are made                  | `FTerrainGenerator`        | Says how high the ground is at one spot. Makes the cubes of a new chunk                             | [World → Terrain](WORLD.md#terrain)                         |
 | `Player/` – the player, and what they do with blocks | `AKubeCraftCharacter`      | Walk, look, jump                                                                                    | [Player → Mining and placing](PLAYER.md#mining-and-placing) |
 |                                                      | `ULookTargetComponent`     | Which cube am I looking at?                                                                         | [Player → Mining and placing](PLAYER.md#mining-and-placing) |
 |                                                      | `UMiningComponent`         | Mines cube after its mining time                                                                    | [Player → Mining and placing](PLAYER.md#mining-and-placing) |
@@ -69,9 +71,10 @@ Game mode ──1. build──▶ World ──▶ Chunk, Chunk, Chunk ...   (8 �
 ## Starting a game
 
 1. The game mode tells the world to build. The world picks a random **seed** (shown in the Output Log),
-   fills 8 × 8 chunks, then draws them.
+   then loads and draws all chunks around the middle at once.
 2. The game mode puts the player on the ground in the middle.
 3. The character shows the HUD.
+4. While playing, the chunk streaming loads new chunks in front of the player and unloads the ones behind.
 
 ## Files
 
@@ -96,7 +99,8 @@ docs/                      ARCHITECTURE.md (this page), WORLD.md, PLAYER.md
 | Change a mining/placing limit             | `Blocks/BlockRules.cpp`                                                                      |
 | Change player size / jump                 | Numbers at the top of `Player/KubeCraftCharacter.cpp`                                        |
 | Change the hills                          | `BP_VoxelWorld` → Terrain                                                                    |
-| Change the world size                     | `BP_VoxelWorld` → WorldSizeInChunks                                                          |
+| Change how far the player sees            | `BP_VoxelWorld` → Streaming → ViewDistanceInChunks                                           |
+| Change how fast new chunks appear         | `BP_VoxelWorld` → Streaming → MaxChunksPerFrame (higher = faster, frames may take longer)    |
 | Get the same world again                  | Copy the seed from the Output Log into `BP_VoxelWorld` → Seed. Turn off `bRandomSeed`        |
 | Change keys                               | `IMC_Default`                                                                                |
 | Make the outline thicker / another colour | `M_BlockOutline`: lower the 0.48 in **Step** / change the colour node                        |
@@ -120,6 +124,7 @@ docs/                      ARCHITECTURE.md (this page), WORLD.md, PLAYER.md
 | `KubeCraft.Integration.BlockRules`        | `Blocks/BlockRules`        | What may be mined, where a block may be placed                                                              |
 | `KubeCraft.Integration.MineAndPlace`      | `World/VoxelWorld`         | Mining and placing can change blocks. Placed type is the given type. A border change redraws the next chunk |
 | `KubeCraft.Integration.IncrementalRedraw` | `Rendering/`               | After many changes, only cubes that touch air are drawn, each with its right type                           |
+| `KubeCraft.Integration.ChunkStreaming`    | `World/ChunkStreaming…`    | The right chunks load, draw and unload. No walls between chunks. A few per call. Changes come back          |
 
 [↑ Contents](#contents)
 
