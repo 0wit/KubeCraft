@@ -71,16 +71,12 @@ struct FTestVoxelWorld
 		Stone = NewObject<UBlockDefinition>();
 		Snow = NewObject<UBlockDefinition>();
 
-		UBlockCatalog* Catalog = NewObject<UBlockCatalog>();
+		Catalog = NewObject<UBlockCatalog>();
 		Catalog->Blocks = { Bedrock, Stone, Snow };
 		Catalog->HeightBands = { MakeBand(1, Bedrock), MakeBand(KubeCraft::Voxel::ChunkHeight, Stone) };
+		BlockMesh = Cube;
 
-		World = EngineWorld->SpawnActor<AVoxelWorld>();
-		World->Catalog = Catalog;
-		World->BlockMesh = Cube;
-		World->bRandomSeed = false;
-		World->Terrain.BaseHeight = GroundHeight;
-		World->Terrain.HeightVariation = 0.f;	// No hills: every column is exactly GroundHeight tall.
+		World = SpawnVoxelWorld();
 		if (Chunks == EChunks::None)
 		{
 			return;
@@ -115,8 +111,41 @@ struct FTestVoxelWorld
 	FTestVoxelWorld(const FTestVoxelWorld&) = delete;
 	FTestVoxelWorld& operator=(const FTestVoxelWorld&) = delete;
 
+	/**
+	 * Another voxel world in the same engine world, with the same block types and flat ground, but no chunks and no
+	 * seed yet. For tests that compare two worlds (save in one, load in the other).
+	 */
+	AVoxelWorld* SpawnVoxelWorld() const
+	{
+		AVoxelWorld* NewWorld = EngineWorld->SpawnActor<AVoxelWorld>();
+		NewWorld->Catalog = Catalog;
+		NewWorld->BlockMesh = BlockMesh;
+		NewWorld->bRandomSeed = false;
+		NewWorld->Terrain.BaseHeight = GroundHeight;
+		NewWorld->Terrain.HeightVariation = 0.f;	// No hills: every column is exactly GroundHeight tall.
+		return NewWorld;
+	}
+
+	/** Turns the random seed of a voxel world on or off (private in AVoxelWorld). The test worlds start with it off. */
+	static void SetRandomSeed(AVoxelWorld& VoxelWorld, bool bRandom)
+	{
+		VoxelWorld.bRandomSeed = bRandom;
+	}
+
 	/** The voxel world's streaming component (private in AVoxelWorld). */
 	UChunkStreamingComponent* GetStreaming() const { return World->Streaming; }
+
+	/** Sets how many chunks far a voxel world draws (private in UChunkStreamingComponent). Small = faster tests. */
+	static void SetViewDistance(AVoxelWorld& VoxelWorld, int32 Chunks)
+	{
+		VoxelWorld.Streaming->ViewDistanceInChunks = Chunks;
+	}
+
+	/** Lets a voxel world's streaming finish all its work around a chunk at once, as if the player stood there. */
+	static void StreamAround(AVoxelWorld& VoxelWorld, const FIntPoint& CenterChunk)
+	{
+		VoxelWorld.Streaming->UpdateAround(CenterChunk, MAX_int32);
+	}
 
 	/** Number of player changes the voxel world remembers, over all chunks (loaded or not). */
 	int32 CountRememberedChanges() const
@@ -199,6 +228,10 @@ private:
 
 	/** The temporary engine world that holds the voxel world. */
 	UWorld* EngineWorld = nullptr;
+
+	/** Shared by every voxel world of this test world. */
+	UBlockCatalog* Catalog = nullptr;
+	UStaticMesh* BlockMesh = nullptr;
 };
 
 #endif // WITH_DEV_AUTOMATION_TESTS

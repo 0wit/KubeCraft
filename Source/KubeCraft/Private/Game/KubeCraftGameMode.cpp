@@ -13,24 +13,33 @@ void AKubeCraftGameMode::StartPlay()
 	// So the world is built first and the pawns are moved onto it before they start falling.
 	if (AVoxelWorld* VoxelWorld = FindVoxelWorld())
 	{
-		VoxelWorld->Generate();
-
-		const FVector Ground = VoxelWorld->GetSurfaceLocation(FIntPoint::ZeroValue);
-		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-		{
-			const APlayerController* Player = It->Get();
-			APawn* Pawn = Player ? Player->GetPawn() : nullptr;
-			if (!Pawn)
-			{
-				continue;
-			}
-			// The pawn's location is its center, so lift it by half its height to put the feet on the ground.
-			const FVector FeetOnGround = Ground + FVector(0.0, 0.0, Pawn->GetSimpleCollisionHalfHeight());
-			Pawn->TeleportTo(FeetOnGround, Pawn->GetActorRotation());
-		}
+		StartWorld(VoxelWorld);
 	}
 
 	Super::StartPlay();
+}
+
+void AKubeCraftGameMode::StartWorld_Implementation(AVoxelWorld* VoxelWorld)
+{
+	if (!VoxelWorld)
+	{
+		return;
+	}
+	VoxelWorld->Generate();
+
+	const FVector Ground = VoxelWorld->GetSurfaceLocation(FIntPoint::ZeroValue);
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		const APlayerController* Player = It->Get();
+		APawn* Pawn = Player ? Player->GetPawn() : nullptr;
+		if (!Pawn)
+		{
+			continue;
+		}
+		// The pawn's location is its center, so lift it by half its height to put the feet on the ground.
+		const FVector FeetOnGround = Ground + FVector(0.0, 0.0, Pawn->GetSimpleCollisionHalfHeight());
+		Pawn->TeleportTo(FeetOnGround, Pawn->GetActorRotation());
+	}
 }
 
 AVoxelWorld* AKubeCraftGameMode::FindVoxelWorld() const

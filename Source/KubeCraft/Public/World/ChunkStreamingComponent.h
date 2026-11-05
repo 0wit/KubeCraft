@@ -33,6 +33,8 @@ private:
 #if WITH_DEV_AUTOMATION_TESTS
 	/** Calls UpdateAround with its own center and limit (Private/Tests/ChunkStreamingTest.cpp). */
 	friend class FChunkStreamingTest;
+	/** Sets the view distance and streams around a chunk for the other tests (Private/Tests/TestVoxelWorld.h). */
+	friend struct FTestVoxelWorld;
 #endif
 
 	/**

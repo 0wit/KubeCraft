@@ -1,4 +1,4 @@
-[Overview](ARCHITECTURE.md#contents) · **World** · [Player](PLAYER.md#contents)
+[Overview](ARCHITECTURE.md#contents) · **World** · [Player](PLAYER.md#contents) · [Menus](MENUS.md#contents)
 
 # KubeCraft – The World
 
@@ -130,6 +130,7 @@ Example with `ViewDistanceInChunks` = 2:
 **Your changes.** A new chunk gets its cubes from the terrain again: same seed → same cubes.
 The world remembers every cube you changed. When a chunk loads again, your changes are put back on top.
 A cube you set back to what the terrain had there (mine stone, place stone) is forgotten: the terrain makes it anyway.
+Saving a world stores exactly these changes and the seed ([Menus → Saving](MENUS.md#saving)).
 
 ```
 from the seed     your changes          loaded chunk
@@ -166,4 +167,4 @@ noise 0.25  →  20 + 6 = 26 cubes high
 
 ---
 
-[Overview](ARCHITECTURE.md#contents) · **World** · [Player](PLAYER.md#contents)
+[Overview](ARCHITECTURE.md#contents) · **World** · [Player](PLAYER.md#contents) · [Menus](MENUS.md#contents)

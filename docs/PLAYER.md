@@ -1,4 +1,4 @@
-[Overview](ARCHITECTURE.md#contents) · [World](WORLD.md#contents) · **Player**
+[Overview](ARCHITECTURE.md#contents) · [World](WORLD.md#contents) · **Player** · [Menus](MENUS.md#contents)
 
 # KubeCraft – The Player
 
@@ -58,4 +58,4 @@ Press right mouse   the selected block is put on the face you look at
 
 ---
 
-[Overview](ARCHITECTURE.md#contents) · [World](WORLD.md#contents) · **Player**
+[Overview](ARCHITECTURE.md#contents) · [World](WORLD.md#contents) · **Player** · [Menus](MENUS.md#contents)

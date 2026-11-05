@@ -1,6 +1,7 @@
 #include "World/VoxelWorld.h"
 
 #include "Blocks/BlockCatalog.h"
+#include "Blocks/BlockDefinition.h"
 #include "Blocks/BlockRules.h"
 #include "Engine/World.h"
 #include "KubeCraft.h"
@@ -20,31 +21,98 @@ AVoxelWorld::AVoxelWorld()
 
 void AVoxelWorld::Generate()
 {
-	if (!ensureMsgf(Chunks.IsEmpty(), TEXT("%s: Generate() was called twice."), *GetName()))
+	if (!CanGenerate())
 	{
 		return;
 	}
-	if (!Catalog || !BlockMesh)
-	{
-		UE_LOG(LogKubeCraft, Error, TEXT("%s: Catalog and BlockMesh must both be assigned; the world stays empty."),
-			*GetName());
-		return;
-	}
-
-	PrepareTerrain();
-
-	// Everything around the start at once, so the player has ground under their feet; the rest follows them.
-	Streaming->LoadAllAround(FIntPoint::ZeroValue);
-	Streaming->SetComponentTickEnabled(true);
-}
-
-void AVoxelWorld::PrepareTerrain()
-{
 	if (bRandomSeed)
 	{
 		// The clock counts in 100 ns steps, so its lowest 32 bits are different on every start.
 		Seed = static_cast<int32>(FDateTime::Now().GetTicks());
 	}
+	GenerateAround(FIntPoint::ZeroValue);
+}
+
+void AVoxelWorld::SetSeed(int32 NewSeed)
+{
+	// The generator is made from the seed once; a later seed would not match the chunks already built.
+	if (Generator)
+	{
+		UE_LOG(LogKubeCraft, Warning, TEXT("%s: SetSeed after the world was built is ignored."), *GetName());
+		return;
+	}
+	Seed = NewSeed;
+	bRandomSeed = false;
+}
+
+void AVoxelWorld::GenerateFromSave(const FVoxelWorldSave& Save, const FVector& PlayerLocation)
+{
+	if (!CanGenerate())
+	{
+		return;
+	}
+	Seed = Save.Seed;
+	ChangedBlocks.Reset();
+	for (const FBlockChange& Change : Save.Changes)
+	{
+		// Air is a null type. A type that is not in the catalog (any more) has no id, so that change is left out.
+		const FIntVector Local = BlockToLocal(Change.Block);
+		const FBlockId Id = Catalog->GetId(Change.Type);
+		if (!IsInsideChunk(Local) || (Change.Type && Id == AirBlockId))
+		{
+			UE_LOG(LogKubeCraft, Warning, TEXT("%s: saved change at %s skipped: above or below the world, or %s is "
+				"not in the catalog."), *GetName(), *Change.Block.ToString(), *GetNameSafe(Change.Type));
+			continue;
+		}
+		ChangedBlocks.FindOrAdd(BlockToChunk(Change.Block)).Add(Local, Id);
+	}
+	GenerateAround(BlockToChunk(WorldToBlock(PlayerLocation)));
+}
+
+FVoxelWorldSave AVoxelWorld::MakeSave() const
+{
+	FVoxelWorldSave Save;
+	Save.Seed = Seed;
+	for (const TPair<FIntPoint, TMap<FIntVector, FBlockId>>& ChunkChanges : ChangedBlocks)
+	{
+		const FIntVector ChunkOrigin = ChunkToBlockOrigin(ChunkChanges.Key);
+		for (const TPair<FIntVector, FBlockId>& Change : ChunkChanges.Value)
+		{
+			// Only a built world has changes, and building needs the catalog.
+			FBlockChange& Saved = Save.Changes.AddDefaulted_GetRef();
+			Saved.Block = ChunkOrigin + Change.Key;
+			Saved.Type = Catalog->GetDefinition(Change.Value);
+		}
+	}
+	return Save;
+}
+
+bool AVoxelWorld::CanGenerate() const
+{
+	if (!ensureMsgf(Chunks.IsEmpty(), TEXT("%s: the world was generated twice."), *GetName()))
+	{
+		return false;
+	}
+	if (!Catalog || !BlockMesh)
+	{
+		UE_LOG(LogKubeCraft, Error, TEXT("%s: Catalog and BlockMesh must both be assigned; the world stays empty."),
+			*GetName());
+		return false;
+	}
+	return true;
+}
+
+void AVoxelWorld::GenerateAround(const FIntPoint& CenterChunk)
+{
+	PrepareTerrain();
+
+	// Everything around the player at once, so they have ground under their feet; the rest follows them.
+	Streaming->LoadAllAround(CenterChunk);
+	Streaming->SetComponentTickEnabled(true);
+}
+
+void AVoxelWorld::PrepareTerrain()
+{
 	UE_LOG(LogKubeCraft, Log, TEXT("World seed: %d"), Seed);
 	Generator.Emplace(Seed, Terrain);
 }
