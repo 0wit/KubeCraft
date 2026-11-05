@@ -56,7 +56,7 @@ Grouped by folder. Each folder is one **topic**, so a change usually stays in on
 | | `AVoxelWorld` | Owns all chunks. Fills them. Changes cubes and redraws | [World → Redrawing](WORLD.md#redrawing-after-a-change) |
 | | `AVoxelChunk` | One piece of the world. Keeps its numbers | [World → A chunk](WORLD.md#a-chunk-avoxelchunk--rendering) |
 | `Rendering/` – how blocks are drawn | `UChunkMeshComponent` | Decides which cubes of one chunk are visible, and of which type | [World → Redrawing](WORLD.md#redrawing-after-a-change) |
-| | `UBlockInstancesComponent` | Draws all cubes of one type in one chunk. Adds or removes a single cube | [World → Redrawing](WORLD.md#redrawing-after-a-change) |
+| | `UBlockInstancesComponent` | Draws all cubes of one type in one chunk. Adds or removes a single cube, knows which cells it draws | [World → Redrawing](WORLD.md#redrawing-after-a-change) |
 | `Terrain/` – how the hills are made | `FTerrainGenerator` | Says how high the ground is at one spot | [World → Terrain](WORLD.md#terrain-fterraingenerator) |
 | `Player/` – the player, and what they do with blocks | `AKubeCraftCharacter` | Walk, look, jump. Passes the mine button on | [Player → Mining and placing](PLAYER.md#mining-and-placing) |
 | | `ULookTargetComponent` | Which cube am I looking at? One reach, shared by mining and placing | [Player → Where the line hits](PLAYER.md#where-the-line-hits) |
@@ -71,7 +71,7 @@ Not C++, but part of the game:
 | `BP_KubeCraftCharacter` | Settings of the player. Graphs: outline + cracks, the place button, choosing a slot | [Player → What the player sees](PLAYER.md#what-the-player-sees-blueprint), [Mining and placing](PLAYER.md#mining-and-placing), [Number keys](PLAYER.md#number-keys) |
 | `BP_InventoryComponent` | The inventory: 8 slots, which one is selected | [Player → Inventory](PLAYER.md#inventory-blueprint) |
 | `S_InventorySlot` | One slot: which block + how many | [Player → Inventory](PLAYER.md#inventory-blueprint) |
-| `WBP_PlayerHUD` | Everything on screen: the "+" crosshair and the row of 8 slots | [Player → HUD](PLAYER.md#hud-wbp_playerhud) |
+| `WBP_PlayerHUD` | Everything on screen: the "+" crosshair and the row of slots (it makes one per inventory slot) | [Player → HUD](PLAYER.md#hud-wbp_playerhud) |
 | `WBP_InventorySlot` | Draws one slot: frame, block picture, count | [Player → HUD](PLAYER.md#hud-wbp_playerhud) |
 | `M_BlockOutline` | Draws only the edges of a cube | [Player → Outline](PLAYER.md#outline-m_blockoutline) |
 | `M_BlockCrack` + `T_Crack` | Draws cracks that grow with mining progress | [Player → Cracks](PLAYER.md#cracks-m_blockcrack) |
@@ -118,7 +118,7 @@ docs/                      ARCHITECTURE.md (this page), WORLD.md, PLAYER.md
 |---|---|
 | Add a block | New `BlockDefinition` asset + material + `Texture` (hotbar picture). Add it at the end of `DA_BlockCatalog`. |
 | Change a block's hotbar picture | Draw a new `T_Block_*` (or set another texture in the block asset's `Texture`). |
-| Change the number of slots | `SlotCount` on `InventoryComponent` in `BP_KubeCraftCharacter` + the same number of slots in `WBP_PlayerHUD` → `InventoryBar`. |
+| Change the number of slots | `SlotCount` on `InventoryComponent` in `BP_KubeCraftCharacter`. The HUD makes that many slots itself. |
 | Change which key picks which slot | `HotbarKeys` in `BP_KubeCraftCharacter` (key name → slot, 0 = first). |
 | Change mining time | `MineTime` in the block asset. |
 | Make a block unbreakable | Turn off `bBreakable` in the block asset. |
@@ -151,7 +151,7 @@ Tests live in `Private/Tests/`. There are two kinds:
 | `KubeCraft.Terrain.Generator` | `Terrain/TerrainGenerator` | Same seed → same hills. Other seed → other hills. Height stays in the world. |
 | `KubeCraft.Integration.BlockRules` | `Blocks/BlockRules` | What may be mined. Where a block may be placed (floor, ceiling, edges, solid cells). |
 | `KubeCraft.Integration.MineAndPlace` | `World/VoxelWorld` | Mining and placing really change blocks. Placed type is the given type. No type / unknown type is refused. A border change redraws the next chunk. |
-| `KubeCraft.Integration.IncrementalRedraw` | `Rendering/` | After many mines and places (across chunk borders, a new block type), the cube-by-cube picture equals a full redraw of every chunk. |
+| `KubeCraft.Integration.IncrementalRedraw` | `Rendering/` | After many mines and places (across chunk borders, at the world's edge and ceiling, a new block type): exactly the cubes that touch air are drawn (the test works this out itself), each by the same type as after a full redraw of every chunk. |
 
 "No placing where a player stands" needs a real player, so it is checked by playing, not by a test.
 The inventory and the HUD are Blueprint, so they are checked by playing too.

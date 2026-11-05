@@ -18,10 +18,6 @@ class KUBECRAFT_API UBlockDefinition : public UPrimaryDataAsset
 	GENERATED_BODY()
 
 public:
-	/** Name shown to the player, e.g. in a future inventory or hotbar. Not used yet. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "KubeCraft|Block")
-	FText DisplayName;
-
 	/** Material applied to every cube of this type. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "KubeCraft|Block")
 	TObjectPtr<UMaterialInterface> Material = nullptr;

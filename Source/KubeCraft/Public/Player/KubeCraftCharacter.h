@@ -49,6 +49,7 @@ private:
 	/** Turns the view (2D input: X = yaw, Y = pitch). */
 	void Look(const FInputActionValue& Value);
 
+	/** First-person view at eye height; it turns with the controller (mouse). */
 	UPROPERTY(VisibleAnywhere, Category = "KubeCraft|Camera")
 	TObjectPtr<UCameraComponent> Camera;
 
@@ -64,15 +65,19 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "KubeCraft|Blocks", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPlacingComponent> PlacingComponent;
 
+	/** Which keys trigger which input action (IMC_Default); given to the controlling player. */
 	UPROPERTY(EditDefaultsOnly, Category = "KubeCraft|Input")
 	TObjectPtr<UInputMappingContext> DefaultMappingContext;
 
+	/** Walk (2D: forward/back, left/right). */
 	UPROPERTY(EditDefaultsOnly, Category = "KubeCraft|Input")
 	TObjectPtr<UInputAction> MoveAction;
 
+	/** Turn the view (2D: yaw, pitch). */
 	UPROPERTY(EditDefaultsOnly, Category = "KubeCraft|Input")
 	TObjectPtr<UInputAction> LookAction;
 
+	/** Pressed to jump; released to stop a held jump. */
 	UPROPERTY(EditDefaultsOnly, Category = "KubeCraft|Input")
 	TObjectPtr<UInputAction> JumpAction;
 

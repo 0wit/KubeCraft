@@ -30,12 +30,16 @@ public:
 	 * Updates the cube of one cell after it or one of its neighbors changed: adds, removes or swaps it.
 	 * Only this cell's cube changes; its six neighbors are only read (on a chunk border, through the world),
 	 * so the neighbor chunks must already be filled. Much cheaper than Rebuild(), which looks at every cell.
+	 * Does nothing if the cell already shows the right type, which is the usual case for a neighbor.
 	 */
 	void RedrawBlock(const FIntVector& Local);
 
 private:
 	/** The block type to draw in this cell, or Air if nothing is drawn (the cell is Air or buried). */
 	FBlockId GetVisibleBlock(const AVoxelChunk& Chunk, const FIntVector& Local) const;
+
+	/** The block type whose mesh has a cube in this cell right now, or Air if none has. */
+	FBlockId FindDrawnBlock(const FIntVector& Local) const;
 
 	/** True if a face of this block can be seen, i.e. at least one neighbor is not solid. */
 	bool IsExposed(const AVoxelChunk& Chunk, const FIntVector& Local) const;

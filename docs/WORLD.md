@@ -97,7 +97,21 @@ For one cube, the mesh component asks: "Should a cube show here, and which type?
 | Solid, touches air on some side | Yes, its type |
 | Solid, buried on all 6 sides | No |
 
-Then it fixes the picture: removes the cube from the wrong type, adds it to the right one. If nothing changed, nothing happens.
+Then it asks its meshes: "Which of you draws a cube here now?" (`FindDrawnBlock`; a chunk has one mesh per type, so only a few.)
+It compares the two answers:
+
+| Should show vs. drawn now | What happens |
+|---|---|
+| Same | Nothing. This is most of the 7 redraws: a neighbor usually looks the same as before. |
+| Different | Takes the cube out of the old type's mesh, adds it to the new type's mesh. |
+
+```
+drawn: grass   should: grass  →  nothing
+drawn: grass   should: air    →  grass removes its cube
+drawn: air     should: stone  →  stone adds a cube
+```
+
+What is drawn is written down in **one** place only: in the meshes. So there is no second list that could disagree with them.
 
 **How one cube is removed (`UBlockInstancesComponent`).** The engine keeps the cubes in a list.
 Removing one moves the **last** cube into the gap (so nothing else has to shift).

@@ -16,6 +16,8 @@ void UBlockInstancesComponent::SetBlocks(const TArray<FIntVector>& Cells)
 	ClearInstances();
 	CellPerInstance.Reset();
 	InstancePerCell.Reset();
+	CellPerInstance.Reserve(Cells.Num());
+	InstancePerCell.Reserve(Cells.Num());
 
 	TArray<FTransform> Transforms;
 	Transforms.Reserve(Cells.Num());

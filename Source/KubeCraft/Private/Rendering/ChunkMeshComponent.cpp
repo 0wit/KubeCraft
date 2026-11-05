@@ -67,22 +67,39 @@ void UChunkMeshComponent::RedrawBlock(const FIntVector& Local)
 		return;
 	}
 
-	// A cell shows at most one type: take it out of every other type's mesh (nothing happens where it has no cube).
+	// Most of the seven redraws after a change end here: the neighbor looks the same as before.
 	const FBlockId Visible = GetVisibleBlock(*Chunk, Local);
-	for (const TPair<uint8, TObjectPtr<UBlockInstancesComponent>>& Pair : MeshPerBlockId)
+	const FBlockId Drawn = FindDrawnBlock(Local);
+	if (Visible == Drawn)
 	{
-		if (Pair.Key != Visible)
-		{
-			Pair.Value->RemoveBlock(Local);
-		}
+		return;
+	}
+
+	// A cell shows at most one type: take the old cube out, then add the new one.
+	if (UBlockInstancesComponent* OldMesh = MeshPerBlockId.FindRef(Drawn))
+	{
+		OldMesh->RemoveBlock(Local);
 	}
 	if (Visible != AirBlockId)
 	{
-		if (UBlockInstancesComponent* Mesh = FindOrCreateMesh(*Chunk->GetVoxelWorld(), Visible))
+		if (UBlockInstancesComponent* NewMesh = FindOrCreateMesh(*Chunk->GetVoxelWorld(), Visible))
 		{
-			Mesh->AddBlock(Local);
+			NewMesh->AddBlock(Local);
 		}
 	}
+}
+
+FBlockId UChunkMeshComponent::FindDrawnBlock(const FIntVector& Local) const
+{
+	// Asking the meshes keeps one record of what is drawn: theirs. A chunk has one mesh per type, so only a few.
+	for (const TPair<uint8, TObjectPtr<UBlockInstancesComponent>>& Pair : MeshPerBlockId)
+	{
+		if (Pair.Value->HasBlock(Local))
+		{
+			return Pair.Key;
+		}
+	}
+	return AirBlockId;
 }
 
 FBlockId UChunkMeshComponent::GetVisibleBlock(const AVoxelChunk& Chunk, const FIntVector& Local) const

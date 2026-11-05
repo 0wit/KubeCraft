@@ -150,9 +150,10 @@ shown if Progress ≥ gray value
 Created by the character at the start. The character hands it the inventory
 (the widget's `Inventory` pin, "Expose on Spawn").
 - Crosshair: a "+" text, anchored to the screen centre. The look trace also goes through the screen centre, so the "+" and the outline agree.
-- `InventoryBar`: a row of 8 `WBP_InventorySlot`, at the bottom centre. On `OnChanged`, slot N is redrawn from inventory slot N.
+- `InventoryBar`: a row of `WBP_InventorySlot`, at the bottom centre. It is empty in the editor.
+  When the HUD starts (Event Construct), it adds one slot widget per inventory slot. So the number of slots is set in one place only: `SlotCount`.
+- On `OnChanged`, slot widget N is redrawn from inventory slot N.
 - `WBP_InventorySlot.Refresh`: picture = the block's `Texture` (`T_Block_*`), count as a number, white frame if selected. Empty slot = frame only.
-- The 8 slots are placed by hand in the HUD. If `SlotCount` ever changes, add or remove slots there too.
 
 [↑ Contents](#contents) · [Overview](ARCHITECTURE.md#contents)
 

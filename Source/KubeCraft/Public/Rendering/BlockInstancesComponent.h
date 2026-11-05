@@ -31,6 +31,9 @@ public:
 	/** Removes the cube in this cell. Does nothing if there is none. */
 	void RemoveBlock(const FIntVector& Cell);
 
+	/** True if this component draws a cube in this cell, e.g. to find which type a cell shows now. */
+	bool HasBlock(const FIntVector& Cell) const { return InstancePerCell.Contains(Cell); }
+
 private:
 	/**
 	 * True if the record has one cell per instance. False (with an ensure) if cubes were added or removed

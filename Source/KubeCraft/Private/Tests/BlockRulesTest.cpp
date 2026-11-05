@@ -28,7 +28,7 @@ bool FBlockRulesTest::RunTest(const FString& Parameters)
 	TestFalse(TEXT("Bedrock can't be mined"), Rules.CanMine(FIntVector(0, 0, 0)));
 	TestTrue(TEXT("Stone can be mined"), Rules.CanMine(FIntVector(0, 0, Top)));
 	TestFalse(TEXT("Air can't be mined"), Rules.CanMine(FIntVector(0, 0, Top + 1)));
-	TestFalse(TEXT("Outside the world is Air"), Rules.CanMine(FIntVector(100, 0, Top)));
+	TestFalse(TEXT("Outside the world is Air"), Rules.CanMine(FIntVector(FTestVoxelWorld::LastBlock + 1, 0, Top)));
 
 	// Placing: only into Air inside the world.
 	TestTrue(TEXT("Air on the ground"), Rules.CanPlace(FIntVector(0, 0, Top + 1)));
@@ -36,10 +36,13 @@ bool FBlockRulesTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Highest cell"), Rules.CanPlace(FIntVector(0, 0, KubeCraft::Voxel::ChunkHeight - 1)));
 	TestFalse(TEXT("Ceiling"), Rules.CanPlace(FIntVector(0, 0, KubeCraft::Voxel::ChunkHeight)));
 	TestFalse(TEXT("Below the floor"), Rules.CanPlace(FIntVector(0, 0, -1)));
-	TestTrue(TEXT("Last cell at -X edge"), Rules.CanPlace(FIntVector(-16, 0, Top + 1)));
-	TestFalse(TEXT("Past the -X edge"), Rules.CanPlace(FIntVector(-17, 0, Top + 1)));
-	TestFalse(TEXT("Past the +X edge"), Rules.CanPlace(FIntVector(16, 0, Top + 1)));
-	TestFalse(TEXT("Past the +Y edge"), Rules.CanPlace(FIntVector(0, 16, Top + 1)));
+	constexpr int32 First = FTestVoxelWorld::FirstBlock;
+	constexpr int32 Last = FTestVoxelWorld::LastBlock;
+	TestTrue(TEXT("Last cell at -X edge"), Rules.CanPlace(FIntVector(First, 0, Top + 1)));
+	TestFalse(TEXT("Past the -X edge"), Rules.CanPlace(FIntVector(First - 1, 0, Top + 1)));
+	TestTrue(TEXT("Last cell at +X edge"), Rules.CanPlace(FIntVector(Last, 0, Top + 1)));
+	TestFalse(TEXT("Past the +X edge"), Rules.CanPlace(FIntVector(Last + 1, 0, Top + 1)));
+	TestFalse(TEXT("Past the +Y edge"), Rules.CanPlace(FIntVector(0, Last + 1, Top + 1)));
 
 	return true;
 }
@@ -71,7 +74,7 @@ bool FMineAndPlaceTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Placed block is snow"), World.GetBlock(Ground), Test.IdOf(Test.Snow));
 	TestFalse(TEXT("Place into a solid cell"), World.PlaceBlock(Ground, Test.Stone));
 	TestEqual(TEXT("Solid cell keeps its block"), World.GetBlock(Ground), Test.IdOf(Test.Snow));
-	TestFalse(TEXT("Place outside the world"), World.PlaceBlock(FIntVector(16, 3, Top + 1), Test.Stone));
+	TestFalse(TEXT("Place outside the world"), World.PlaceBlock(FIntVector(FTestVoxelWorld::LastBlock + 1, 3, Top + 1), Test.Stone));
 
 	// Placing needs a type the catalog knows; anything else would be an invisible solid block.
 	const FIntVector Above(3, 3, Top + 1);
