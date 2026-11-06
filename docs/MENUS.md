@@ -19,12 +19,13 @@ Everything here are Blueprints. C++ only gives Blueprint the seed and the change
 ```
 
 - Opening a level destroys everything in the old one. **Game instance** stays.
+- Menu music stops by itself when a world opens.
 
 | Asset                      | Job                                                                   |
 | -------------------------- | --------------------------------------------------------------------- |
 | `BP_KubeCraftGameInstance` | Remembers the world being played. Creates, loads, saves, deletes them |
-| `BP_MainMenuGameMode`      | Shows the main menu                                                   |
-| `BP_KubeCraftGameMode`     | Builds a new or a saved world                                         |
+| `BP_MainMenuGameMode`      | Shows the main menu and plays the menu music (loops)                  |
+| `BP_KubeCraftGameMode`     | Builds a new or a saved world. Plays one random `AmbientMusic` track  |
 | `WBP_MainMenu`             | Start, New World, Load World and Settings pages                       |
 | `WBP_WorldEntry`           | One saved world on the Load page                                      |
 | `WBP_PauseMenu`            | Esc menu                                                              |

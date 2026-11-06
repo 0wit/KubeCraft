@@ -53,10 +53,13 @@ int32 FTerrainGenerator::GetSurfaceHeight(int32 BlockX, int32 BlockY) const
 TArray<FBlockId> FTerrainGenerator::GenerateChunk(const FIntPoint& ChunkCoord, const UBlockCatalog& Catalog) const
 {
 	// The block type depends only on the height, so look it up once per height instead of once per block.
+	// The top cube of a column can differ (grass on top of dirt), so keep a second table for it.
 	FBlockId BlockIdPerHeight[ChunkHeight];
+	FBlockId TopIdPerHeight[ChunkHeight];
 	for (int32 Z = 0; Z < ChunkHeight; ++Z)
 	{
-		BlockIdPerHeight[Z] = Catalog.GetIdForHeight(Z);
+		BlockIdPerHeight[Z] = Catalog.GetIdForHeight(Z, /*bIsTop*/ false);
+		TopIdPerHeight[Z] = Catalog.GetIdForHeight(Z, /*bIsTop*/ true);
 	}
 
 	TArray<FBlockId> Blocks;
@@ -69,7 +72,7 @@ TArray<FBlockId> FTerrainGenerator::GenerateChunk(const FIntPoint& ChunkCoord, c
 			const int32 Height = GetSurfaceHeight(Origin.X + X, Origin.Y + Y);
 			for (int32 Z = 0; Z < Height; ++Z)
 			{
-				Blocks[LocalToIndex(FIntVector(X, Y, Z))] = BlockIdPerHeight[Z];
+				Blocks[LocalToIndex(FIntVector(X, Y, Z))] = (Z == Height - 1) ? TopIdPerHeight[Z] : BlockIdPerHeight[Z];
 			}
 		}
 	}
@@ -78,9 +81,10 @@ TArray<FBlockId> FTerrainGenerator::GenerateChunk(const FIntPoint& ChunkCoord, c
 
 FBlockId FTerrainGenerator::GetTerrainBlock(const FIntVector& Block, const UBlockCatalog& Catalog) const
 {
-	if (Block.Z < 0 || Block.Z >= GetSurfaceHeight(Block.X, Block.Y))
+	const int32 Height = GetSurfaceHeight(Block.X, Block.Y);
+	if (Block.Z < 0 || Block.Z >= Height)
 	{
 		return AirBlockId;
 	}
-	return Catalog.GetIdForHeight(Block.Z);
+	return Catalog.GetIdForHeight(Block.Z, /*bIsTop*/ Block.Z == Height - 1);
 }

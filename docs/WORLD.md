@@ -162,7 +162,20 @@ noise 0.25  →  20 + 6 = 26 cubes high
 ## Blocks and height
 
 - Block number = place in the `DA_BlockCatalog` list + 1.
-- Below 1 → bedrock. Below 16 → stone. Below 26 → grass. Above → snow.
+- Below 1 → bedrock. Below 16 → stone. Below 26 → dirt. Above → snow.
+- A band can have a **top block**: the top cube of a column in that band uses it instead.
+- The dirt band has grass as its top block. So grass is only the top cube, with dirt under it:
+
+```
+ height 20 column:
+ Z 19      grass    ← top cube, in the dirt band → top block
+ Z 16–18   dirt
+ Z 1–15    stone
+ Z 0       bedrock
+```
+
+- A column whose top is in the stone band stays bare stone (that band has no top block).
+- The top block is chosen when the land is made. Mining the grass leaves the dirt under it as it is.
 - This rule is only for the generated terrain. A placed cube is the type of the selected slot.
 - Bottom of the world = 0.
 - Top of the world = 64.

@@ -57,13 +57,13 @@ struct KUBECRAFT_API FTerrainGenerator
 
 	/**
 	 * Fills a whole new chunk: each column is solid up to its height.
-	 * The catalog picks the block type by height.
+	 * The catalog picks the block type by height; the top cube of a column may get its own type (grass on dirt).
 	 */
 	TArray<FBlockId> GenerateChunk(const FIntPoint& ChunkCoord, const UBlockCatalog& Catalog) const;
 
 	/**
 	 * Gives the same answer as GenerateChunk, but for one block.
-	 * Air above the ground, otherwise the type for that height.
+	 * Air above the ground, otherwise the type for that height (or the top type for the top cube).
 	 */
 	FBlockId GetTerrainBlock(const FIntVector& Block, const UBlockCatalog& Catalog) const;
 

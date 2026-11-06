@@ -1,6 +1,7 @@
 #include "Misc/AutomationTest.h"
+#include "Blocks/BlockCatalog.h"
+#include "Blocks/BlockDefinition.h"
 #include "Terrain/TerrainGenerator.h"
-#include "Tests/TestVoxelWorld.h"
 #include "World/VoxelTypes.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -58,6 +59,7 @@ bool FTerrainGeneratorTest::RunTest(const FString& Parameters)
 /**
  * Checks that FTerrainGenerator::GetTerrainBlock (one block) gives the same answer as GenerateChunk (a whole chunk) on
  * hilly land, so the voxel world can trust it to tell whether a player change put a block back to its terrain value.
+ * Also checks that only the top cube of each column gets the band's TopBlock (like grass on top of dirt).
  */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTerrainBlockTest, "KubeCraft.Terrain.TerrainBlock",
 	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
@@ -66,13 +68,22 @@ bool FTerrainBlockTest::RunTest(const FString& Parameters)
 {
 	using namespace KubeCraft::Voxel;
 
-	// Only for its catalog: bedrock at the bottom, stone above it.
-	const FTestVoxelWorld Test(FTestVoxelWorld::EChunks::None);
-	if (!TestNotNull(TEXT("Test world"), Test.World))
-	{
-		return false;
-	}
-	const UBlockCatalog& Catalog = *Test.World->GetCatalog();
+	// Bedrock at the bottom, stone above it, and snow as the top cube of the stone band,
+	// so the top cube of each column must differ from the cubes below it.
+	UBlockDefinition* Bedrock = NewObject<UBlockDefinition>();
+	UBlockDefinition* Stone = NewObject<UBlockDefinition>();
+	UBlockDefinition* Snow = NewObject<UBlockDefinition>();
+	UBlockCatalog* TestCatalog = NewObject<UBlockCatalog>();
+	TestCatalog->Blocks = { Bedrock, Stone, Snow };
+	TestCatalog->HeightBands.SetNum(2);
+	TestCatalog->HeightBands[0].MaxZ = 1;
+	TestCatalog->HeightBands[0].Block = Bedrock;
+	TestCatalog->HeightBands[1].MaxZ = ChunkHeight;
+	TestCatalog->HeightBands[1].Block = Stone;
+	TestCatalog->HeightBands[1].TopBlock = Snow;
+	const UBlockCatalog& Catalog = *TestCatalog;
+	const FBlockId StoneId = Catalog.GetId(Stone);
+	const FBlockId SnowId = Catalog.GetId(Snow);
 	const FTerrainGenerator Generator(42, FTerrainSettings());
 
 	// A chunk on each side of the origin, so negative coordinates are covered too.
@@ -94,6 +105,21 @@ bool FTerrainBlockTest::RunTest(const FString& Parameters)
 		}
 		TestEqual(FString::Printf(TEXT("Chunk %s: GetTerrainBlock = GenerateChunk"), *ChunkCoord.ToString()),
 			Mismatches, 0);
+
+		// Only the top cube of each column gets the TopBlock; the cube under it keeps the band's Block.
+		int32 WrongTops = 0;
+		for (int32 Y = 0; Y < ChunkSize; ++Y)
+		{
+			for (int32 X = 0; X < ChunkSize; ++X)
+			{
+				const int32 Height = Generator.GetSurfaceHeight(Origin.X + X, Origin.Y + Y);
+				// Height 1 means the top cube is at Z 0, which is in the bedrock band (no TopBlock).
+				WrongTops += Height >= 2 && Blocks[LocalToIndex(FIntVector(X, Y, Height - 1))] != SnowId;
+				WrongTops += Height >= 3 && Blocks[LocalToIndex(FIntVector(X, Y, Height - 2))] != StoneId;
+			}
+		}
+		TestEqual(FString::Printf(TEXT("Chunk %s: top cube = TopBlock, below = Block"), *ChunkCoord.ToString()),
+			WrongTops, 0);
 	}
 	TestEqual(TEXT("Below the floor is Air"), Generator.GetTerrainBlock(FIntVector(0, 0, -1), Catalog), AirBlockId);
 	return true;

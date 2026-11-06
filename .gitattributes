@@ -17,3 +17,6 @@
 *.wav    filter=lfs diff=lfs merge=lfs -text
 *.mp3    filter=lfs diff=lfs merge=lfs -text
 *.ogg    filter=lfs diff=lfs merge=lfs -text
+
+# Claude Code skills: LF, so their shell scripts run in bash
+.claude/** text eol=lf

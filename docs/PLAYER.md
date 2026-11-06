@@ -53,6 +53,9 @@ Example: Grass is selected. Mining Grass gives `Grass 3`; mining Stone goes to t
 
 ## What the player sees in the world
 
+- **Blocks:** `M_Block` with textures `TopTexture`, `BottomTexture`,
+  else `SideTexture`. It multiplies it by `Color` and darkens the edges. Each `MI_Block_*` sets these.
+  All three textures are white by default, so a block without textures is just its `Color`.
 - **Outline:** a slightly bigger cube around the block you look at. The material draws only the edges.
 - **Cracks:** another slightly bigger cube on the block you mine. The cracks grow with the mining progress.
   In `T_Crack`, darker pixels appear earlier.

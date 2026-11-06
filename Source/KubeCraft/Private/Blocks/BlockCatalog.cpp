@@ -17,16 +17,18 @@ FBlockId UBlockCatalog::GetId(const UBlockDefinition* Definition) const
 	return (Definition && Index != INDEX_NONE) ? static_cast<FBlockId>(Index + 1) : AirBlockId;
 }
 
-FBlockId UBlockCatalog::GetIdForHeight(int32 Z) const
+FBlockId UBlockCatalog::GetIdForHeight(int32 Z, bool bIsTop) const
 {
-	for (const FBlockHeightBand& Band : HeightBands)
+	if (HeightBands.IsEmpty())
 	{
-		if (Z < Band.MaxZ)
-		{
-			return GetId(Band.Block);
-		}
+		return AirBlockId;
 	}
-	return HeightBands.IsEmpty() ? AirBlockId : GetId(HeightBands.Last().Block);
+	const FBlockHeightBand* Band = HeightBands.FindByPredicate([Z](const FBlockHeightBand& Each) { return Z < Each.MaxZ; });
+	if (!Band)
+	{
+		Band = &HeightBands.Last();
+	}
+	return GetId(bIsTop && Band->TopBlock ? Band->TopBlock : Band->Block);
 }
 
 // runs only in the editor and checks the asset when you save it.
@@ -75,6 +77,10 @@ EDataValidationResult UBlockCatalog::IsDataValid(FDataValidationContext& Context
 		if (GetId(Band.Block) == AirBlockId)
 		{
 			AddError(FText::Format(LOCTEXT("BandBlockNotListed", "HeightBands[{0}] uses a block that is not in Blocks."), Index));
+		}
+		if (Band.TopBlock && GetId(Band.TopBlock) == AirBlockId)
+		{
+			AddError(FText::Format(LOCTEXT("BandTopBlockNotListed", "HeightBands[{0}] has a TopBlock that is not in Blocks."), Index));
 		}
 		if (Band.MaxZ <= 0 || Band.MaxZ > KubeCraft::Voxel::ChunkHeight)
 		{

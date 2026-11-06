@@ -20,14 +20,21 @@ struct FBlockHeightBand
 	/** Block type used inside this band. Must also be listed in the catalog's Blocks. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "KubeCraft|Blocks")
 	TObjectPtr<UBlockDefinition> Block = nullptr;
+
+	/**
+	 * Optional block for the top cube of a column inside this band.
+	 * Empty = the top cube is Block too. Must also be listed in the catalog's Blocks.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "KubeCraft|Blocks")
+	TObjectPtr<UBlockDefinition> TopBlock = nullptr;
 };
 
 /**
  * All block types in the game and the height rule, edited as one data asset (DA_BlockCatalog).
  *
- *   Blocks:       [DA_Block_Stone, DA_Block_Grass, DA_Block_Snow, DA_Block_Bedrock]
- *                    id 1            id 2            id 3          id 4             (id 0 = Air)
- *   HeightBands:  [{MaxZ 1: Bedrock}, {MaxZ 16: Stone}, {MaxZ 26: Grass}, {MaxZ 64: Snow}]
+ *   Blocks:       [DA_Block_Stone, DA_Block_Grass, DA_Block_Snow, DA_Block_Bedrock, DA_Block_Dirt]
+ *                    id 1            id 2            id 3          id 4              id 5    (id 0 = Air)
+ *   HeightBands:  [{MaxZ 1: Bedrock}, {MaxZ 16: Stone}, {MaxZ 26: Dirt, top: Grass}, {MaxZ 64: Snow}]
  *
  * Chunks store only the id (one byte per cube); this catalog turns an id back into its definition.
  * The height bands decide which block type the terrain generator puts at each height.
@@ -44,9 +51,12 @@ public:
 	/** Does the reverse: it gives you the id for a block asset. Block that isn't in the list gives 0 (air). */
 	FBlockId GetId(const UBlockDefinition* Definition) const;
 
-	/** Tells the terrain generator which block goes at height Z, using the height bands.
-	 * Above the last band it keeps using the last band's block. */
-	FBlockId GetIdForHeight(int32 Z) const;
+	/**
+	 * Tells the terrain generator which block goes at height Z, using the height bands.
+	 * bIsTop = this is the top cube of its column, so the band's TopBlock is used if it has one.
+	 * Above the last band it keeps using the last band.
+	 */
+	FBlockId GetIdForHeight(int32 Z, bool bIsTop) const;
 
 #if WITH_EDITOR
 	/** Reports configuration mistakes (missing materials, unsorted bands, ...) when the asset is saved. */
@@ -56,6 +66,7 @@ public:
 protected:
 	/** The automation tests fill Blocks and HeightBands directly; in the game they are only edited in the asset. */
 	friend class FBlockCatalogHeightBandsTest;
+	friend class FTerrainBlockTest;
 	friend struct FTestVoxelWorld;
 
 	/**
