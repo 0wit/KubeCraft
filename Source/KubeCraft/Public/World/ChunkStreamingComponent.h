@@ -20,7 +20,7 @@ class KUBECRAFT_API UChunkStreamingComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:
-	/** Ticks only after AVoxelWorld::Generate has picked the seed and switched it on. */
+	/** Ticks only after AVoxelWorld has built the world (Generate or GenerateFromSave) and switched it on. */
 	UChunkStreamingComponent();
 
 	/** Loads and draws everything around a chunk at once, ignoring MaxChunksPerFrame. For the start of the game. */

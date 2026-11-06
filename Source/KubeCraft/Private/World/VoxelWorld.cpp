@@ -30,6 +30,7 @@ void AVoxelWorld::Generate()
 		// The clock counts in 100 ns steps, so its lowest 32 bits are different on every start.
 		Seed = static_cast<int32>(FDateTime::Now().GetTicks());
 	}
+	PrepareTerrain();
 	GenerateAround(FIntPoint::ZeroValue);
 }
 
@@ -45,6 +46,25 @@ void AVoxelWorld::SetSeed(int32 NewSeed)
 	bRandomSeed = false;
 }
 
+bool AVoxelWorld::TryParseSeed(const FString& Text, int32& OutSeed)
+{
+	const FString Trimmed = Text.TrimStartAndEnd();
+	if (Trimmed.IsEmpty())
+	{
+		return false;
+	}
+	// Read as int64, so a number too big for a seed is seen as too big instead of wrapping around.
+	TCHAR* End = nullptr;
+	const int64 Value = FCString::Strtoi64(*Trimmed, &End, 10);
+	// The whole text must be the number: "12.5" or "12abc" stop early.
+	if (*End != TEXT('\0') || Value < MIN_int32 || Value > MAX_int32)
+	{
+		return false;
+	}
+	OutSeed = static_cast<int32>(Value);
+	return true;
+}
+
 void AVoxelWorld::GenerateFromSave(const FVoxelWorldSave& Save, const FVector& PlayerLocation)
 {
 	if (!CanGenerate())
@@ -52,19 +72,19 @@ void AVoxelWorld::GenerateFromSave(const FVoxelWorldSave& Save, const FVector& P
 		return;
 	}
 	Seed = Save.Seed;
-	ChangedBlocks.Reset();
+	PrepareTerrain();
 	for (const FBlockChange& Change : Save.Changes)
 	{
 		// Air is a null type. A type that is not in the catalog (any more) has no id, so that change is left out.
-		const FIntVector Local = BlockToLocal(Change.Block);
 		const FBlockId Id = Catalog->GetId(Change.Type);
-		if (!IsInsideChunk(Local) || (Change.Type && Id == AirBlockId))
+		if (!IsInsideChunk(BlockToLocal(Change.Block)) || (Change.Type && Id == AirBlockId))
 		{
 			UE_LOG(LogKubeCraft, Warning, TEXT("%s: saved change at %s skipped: above or below the world, or %s is "
 				"not in the catalog."), *GetName(), *Change.Block.ToString(), *GetNameSafe(Change.Type));
 			continue;
 		}
-		ChangedBlocks.FindOrAdd(BlockToChunk(Change.Block)).Add(Local, Id);
+		// Like a change in the game, so one the terrain makes by itself anyway (e.g. after a terrain update) is dropped.
+		RememberChange(Change.Block, Id);
 	}
 	GenerateAround(BlockToChunk(WorldToBlock(PlayerLocation)));
 }
@@ -89,7 +109,7 @@ FVoxelWorldSave AVoxelWorld::MakeSave() const
 
 bool AVoxelWorld::CanGenerate() const
 {
-	if (!ensureMsgf(Chunks.IsEmpty(), TEXT("%s: the world was generated twice."), *GetName()))
+	if (!ensureMsgf(!Generator, TEXT("%s: the world was generated twice."), *GetName()))
 	{
 		return false;
 	}
@@ -104,8 +124,6 @@ bool AVoxelWorld::CanGenerate() const
 
 void AVoxelWorld::GenerateAround(const FIntPoint& CenterChunk)
 {
-	PrepareTerrain();
-
 	// Everything around the player at once, so they have ground under their feet; the rest follows them.
 	Streaming->LoadAllAround(CenterChunk);
 	Streaming->SetComponentTickEnabled(true);
@@ -121,8 +139,8 @@ void AVoxelWorld::LoadChunk(const FIntPoint& ChunkCoord)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ChunkLoad);
 
-	// Generate makes the generator only once the catalog and the block mesh are known to be set.
-	if (!ensureMsgf(Generator, TEXT("%s: LoadChunk before Generate"), *GetName()) || FindChunk(ChunkCoord))
+	// The generator is made only when the world is built, which checks that the catalog and the block mesh are set.
+	if (!ensureMsgf(Generator, TEXT("%s: LoadChunk before the world was built"), *GetName()) || FindChunk(ChunkCoord))
 	{
 		return;
 	}
@@ -226,7 +244,7 @@ bool AVoxelWorld::MineBlock(const FIntVector& Block)
 
 bool AVoxelWorld::PlaceBlock(const FIntVector& Block, const UBlockDefinition* Type)
 {
-	// CanPlace needs a chunk, and chunks only exist when Generate found a catalog.
+	// CanPlace needs a chunk, and chunks only exist once the world is built, which needs a catalog.
 	if (!FBlockRules(*this).CanPlace(Block))
 	{
 		return false;
@@ -260,7 +278,7 @@ bool AVoxelWorld::SetBlockAndRedraw(const FIntVector& Block, FBlockId Id)
 
 void AVoxelWorld::RememberChange(const FIntVector& Block, FBlockId Id)
 {
-	// A loaded chunk means Generate has made the generator.
+	// Called for a loaded chunk or from GenerateFromSave; both come after PrepareTerrain made the generator.
 	const FIntPoint ChunkCoord = BlockToChunk(Block);
 	const FIntVector Local = BlockToLocal(Block);
 	if (Id != Generator->GetTerrainBlock(Block, *Catalog))

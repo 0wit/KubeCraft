@@ -20,7 +20,7 @@ namespace
 /**
  * Checks AVoxelWorld::MakeSave and GenerateFromSave: a save holds the seed and every change, also of unloaded chunks.
  * A new world built from it has that seed and those blocks, is drawn around the player's location instead of the
- * start, and leaves out a change whose block type is not in its catalog.
+ * start, and leaves out a change whose block type is not in its catalog or that the terrain makes anyway.
  */
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSaveLoadTest, "KubeCraft.Integration.SaveLoad",
 	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
@@ -69,6 +69,11 @@ bool FSaveLoadTest::RunTest(const FString& Parameters)
 	UnknownChange.Type = NewObject<UBlockDefinition>();
 	AddExpectedMessage(TEXT("not in the catalog"), ELogVerbosity::Warning);
 
+	// A change to what the terrain has anyway (e.g. saved before a terrain update): not kept, like in the game.
+	FBlockChange& SameAsTerrain = Save.Changes.AddDefaulted_GetRef();
+	SameAsTerrain.Block = FIntVector(2, 2, Top);
+	SameAsTerrain.Type = Test.Stone;
+
 	// 3. Load into a new world, with the player standing in chunk (1, 0).
 	AVoxelWorld& Loaded = *Test.SpawnVoxelWorld();
 	FTestVoxelWorld::SetViewDistance(Loaded, View);
@@ -116,6 +121,37 @@ bool FCustomSeedTest::RunTest(const FString& Parameters)
 	AddExpectedMessage(TEXT("SetSeed after the world was built is ignored"), ELogVerbosity::Warning);
 	World.SetSeed(TypedSeed + 1);
 	TestEqual(TEXT("A seed after building changes nothing"), World.MakeSave().Seed, TypedSeed);
+
+	return true;
+}
+
+/**
+ * Checks AVoxelWorld::TryParseSeed, which reads the seed typed in for a new world: whole numbers that fit in an int32
+ * are seeds, anything else is not (and the game picks a random seed instead).
+ */
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FParseSeedTest, "KubeCraft.World.ParseSeed",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FParseSeedTest::RunTest(const FString& Parameters)
+{
+	const TPair<const TCHAR*, int32> Seeds[] = {
+		{ TEXT("1234"), 1234 }, { TEXT("-42"), -42 }, { TEXT("  7 "), 7 },
+		{ TEXT("2147483647"), MAX_int32 }, { TEXT("-2147483648"), MIN_int32 } };
+	for (const TPair<const TCHAR*, int32>& Seed : Seeds)
+	{
+		int32 Parsed = 0;
+		TestTrue(FString::Printf(TEXT("'%s' is a seed"), Seed.Key), AVoxelWorld::TryParseSeed(Seed.Key, Parsed));
+		TestEqual(FString::Printf(TEXT("'%s' is read right"), Seed.Key), Parsed, Seed.Value);
+	}
+
+	const TCHAR* NotSeeds[] = {
+		TEXT(""), TEXT("   "), TEXT("-"), TEXT("abc"), TEXT("12.5"), TEXT("12abc"), TEXT("1 2"),
+		TEXT("2147483648"), TEXT("99999999999999999999") };
+	for (const TCHAR* Text : NotSeeds)
+	{
+		int32 Parsed = 0;
+		TestFalse(FString::Printf(TEXT("'%s' is not a seed"), Text), AVoxelWorld::TryParseSeed(Text, Parsed));
+	}
 
 	return true;
 }

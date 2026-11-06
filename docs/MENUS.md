@@ -8,7 +8,7 @@
 · [Saving](#saving) · [Loading](#loading) · [Pause menu](#pause-menu) · [Input mode](#input-mode)
 
 Everything on this page is Blueprint. C++ only gives Blueprint the seed and the changed cubes
-(`AVoxelWorld`: `MakeSave`, `GenerateFromSave`, `SetSeed`).
+(`AVoxelWorld`: `MakeSave`, `GenerateFromSave`, `SetSeed`, `TryParseSeed`).
 
 ## From menu to world
 
@@ -45,11 +45,14 @@ Everything on this page is Blueprint. C++ only gives Blueprint the seed and the 
 | Load World | One row per saved world, Back           |
 | Settings   | Back returns to Start                   |
 
-| Field typed in       | Result                |
-| -------------------- | --------------------- |
-| Name empty           | "New World"           |
-| Seed `1234`          | Seed 1234             |
-| Seed empty or `abc`  | A random seed         |
+| Field typed in                       | Result                |
+| ------------------------------------ | --------------------- |
+| Name empty                           | "New World"           |
+| Seed `1234` or `-42`                 | Seed 1234 or -42      |
+| Seed empty, `abc`, `12.5`            | A random seed         |
+| Seed too big (over 2147483647)       | A random seed         |
+
+- `TryParseSeed` (C++) decides what is a seed: a whole number that fits in an `int32`.
 
 ## Starting the world
 
@@ -87,6 +90,8 @@ Everything on this page is Blueprint. C++ only gives Blueprint the seed and the 
   exposure is fixed: `ThumbnailExposure` (EV100, -1.5 = as bright as the game; higher = darker).
 - A world started with Play in `L_World` (not through the main menu) has no slot yet. Its first save gives it
   one, named "New World".
+- SaveWorld returns **Saved**. If the world's file can't be written (e.g. disk full), it stops there: the list
+  and the picture stay as they were.
 
 ```
 Saved/SaveGames/
@@ -104,6 +109,8 @@ Saved/SaveGames/
 - One `WBP_WorldEntry` per slot in "Worlds". Each row reads its own save: the name and "Seed 1234 | date".
   Its picture comes from the PNG. A world without one shows a grey box.
 - **Load:** the game instance keeps the save and opens `L_World`, see [Starting the world](#starting-the-world).
+  A save that can't be read (missing or broken) changes nothing: the row says "Can't be loaded". Otherwise the
+  next save would write a new random world into the old world's slot.
 - **Delete:** the save, its picture and its entry in "Worlds" are deleted, the row disappears.
   (Deleting a file needs the engine plugin "Blueprint File Utilities", turned on in `KubeCraft.uproject`.)
 
@@ -111,12 +118,12 @@ Saved/SaveGames/
 
 `WBP_PauseMenu` (Esc = `IA_Pause`)
 
-| Button      | What it does                              |
-| ----------- | ----------------------------------------- |
-| Resume      | Closes the menu (Esc does the same)       |
-| Save        | Saves, the game stays paused              |
-| Settings    | Settings page, Back returns               |
-| Save & Quit | Saves, then opens the main menu           |
+| Button      | What it does                                              |
+| ----------- | --------------------------------------------------------- |
+| Resume      | Closes the menu (Esc does the same)                       |
+| Save        | Saves, the game stays paused                              |
+| Settings    | Settings page, Back returns                               |
+| Save & Quit | Saves, then opens the main menu. Stays if the save failed |
 
 - The game is paused while the menu is open. `IA_Pause` has "Trigger when Paused" on, so Esc still works.
 - `BP_KubeCraftCharacter` makes the menu on the first Esc and keeps it (TogglePauseMenu).

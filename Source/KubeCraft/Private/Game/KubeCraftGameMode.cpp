@@ -21,10 +21,6 @@ void AKubeCraftGameMode::StartPlay()
 
 void AKubeCraftGameMode::StartWorld_Implementation(AVoxelWorld* VoxelWorld)
 {
-	if (!VoxelWorld)
-	{
-		return;
-	}
 	VoxelWorld->Generate();
 
 	const FVector Ground = VoxelWorld->GetSurfaceLocation(FIntPoint::ZeroValue);

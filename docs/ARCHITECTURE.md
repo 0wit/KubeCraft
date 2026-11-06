@@ -139,6 +139,7 @@ Saved/SaveGames/           saved worlds (made while playing, not in git)
 | Test                                      | Tests code in              | Checks                                                                                                      |
 | ----------------------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | `KubeCraft.World.Coordinates`             | `World/VoxelTypes.h`       | Position conversions, also negative ones. Which cube a hit means                                            |
+| `KubeCraft.World.ParseSeed`               | `World/VoxelWorld`         | Which typed-in text is a seed: `-42` yes; `12.5`, `abc` or a too big number no                              |
 | `KubeCraft.Blocks.HeightBands`            | `Blocks/BlockCatalog`      | Which block goes at which height                                                                            |
 | `KubeCraft.Terrain.Generator`             | `Terrain/TerrainGenerator` | Same seed → same hills. Other seed → other hills                                                            |
 | `KubeCraft.Terrain.TerrainBlock`          | `Terrain/TerrainGenerator` | The cube at one spot is the same as in the whole generated chunk                                            |
@@ -146,7 +147,7 @@ Saved/SaveGames/           saved worlds (made while playing, not in git)
 | `KubeCraft.Integration.MineAndPlace`      | `World/VoxelWorld`         | Mining and placing can change blocks. Placed type is the given type. A border change redraws the next chunk |
 | `KubeCraft.Integration.IncrementalRedraw` | `Rendering/`               | After many changes, only cubes that touch air are drawn, each with its right type                           |
 | `KubeCraft.Integration.ChunkStreaming`    | `World/ChunkStreaming…`    | Start draws the middle. Right chunks load, draw, unload. No walls. A few per call. Changes come back        |
-| `KubeCraft.Integration.SaveLoad`          | `World/VoxelWorld`         | A save has the seed and all changes. A loaded world has them too, drawn around the player                   |
+| `KubeCraft.Integration.SaveLoad`          | `World/VoxelWorld`         | A save has the seed and all changes. A loaded world has them, drawn around the player. Unneeded ones go     |
 | `KubeCraft.Integration.CustomSeed`        | `World/VoxelWorld`         | A typed-in seed wins over the random one. After building, a new seed changes nothing                        |
 
 [↑ Contents](#contents)

@@ -75,14 +75,24 @@ public:
 	void SetSeed(int32 NewSeed);
 
 	/**
+	 * Reads a seed the player typed in: a whole number that fits in an int32, spaces around it allowed.
+	 * Returns false for anything else ("", "12.5", "abc", "99999999999"), so the caller can pick a random seed instead.
+	 */
+	UFUNCTION(BlueprintPure, Category = "KubeCraft|World")
+	static bool TryParseSeed(const FString& Text, int32& OutSeed);
+
+	/**
 	 * Builds a saved world instead of a new one: its seed, its changes, and the chunks around the player's saved
 	 * location at once, so the player lands on ground. Call once instead of Generate, before the player is placed.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "KubeCraft|World")
 	void GenerateFromSave(const FVoxelWorldSave& Save, const FVector& PlayerLocation);
 
-	/** The seed and every player change, for a SaveGame to store. */
-	UFUNCTION(BlueprintPure, Category = "KubeCraft|World")
+	/**
+	 * The seed and every player change, for a SaveGame to store. Not pure: it copies every change,
+	 * so it should run once, when saving - a pure node would run again for every pin that reads it.
+	 */
+	UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = "KubeCraft|World")
 	FVoxelWorldSave MakeSave() const;
 
 	/** Block at a world block coordinate. Air where no chunk is loaded and above or below the world. */
@@ -116,7 +126,8 @@ public:
 
 	/**
 	 * Creates a chunk and fills it: terrain from the seed, then the remembered player changes. Does not draw it,
-	 * because its border cubes need the neighbor chunks. Does nothing if it is already loaded or Generate has not run.
+	 * because its border cubes need the neighbor chunks. Does nothing if it is already loaded or the world is not
+	 * built yet (by Generate or GenerateFromSave).
 	 */
 	void LoadChunk(const FIntPoint& ChunkCoord);
 
@@ -147,11 +158,11 @@ private:
 	/** True if the world can be built: not built yet, and Catalog and BlockMesh are set (else it logs why not). */
 	bool CanGenerate() const;
 
-	/** Makes the terrain generator from Seed, then loads and draws the chunks around a chunk. The end of both Generates. */
-	void GenerateAround(const FIntPoint& CenterChunk);
-
-	/** Makes the terrain generator from Seed. Part of GenerateAround. */
+	/** Makes the terrain generator from Seed. The first step of both Generates; everything after it may use Generator. */
 	void PrepareTerrain();
+
+	/** Loads and draws the chunks around a chunk at once, then lets the streaming follow the player. The last step of both Generates. */
+	void GenerateAround(const FIntPoint& CenterChunk);
 
 	/**
 	 * Remembers a player change for when its chunk loads again. A block set back to what the terrain had there
@@ -196,7 +207,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "KubeCraft|World")
 	FTerrainSettings Terrain;
 
-	/** Made once from Seed and Terrain by Generate, so every chunk gets the same land - even if they are edited later. */
+	/**
+	 * Made once from Seed and Terrain when the world is built (PrepareTerrain), so every chunk gets the same land -
+	 * even if they are edited later. Set means the world is built.
+	 */
 	TOptional<FTerrainGenerator> Generator;
 
 	/** Every loaded chunk, by chunk coordinate. */
