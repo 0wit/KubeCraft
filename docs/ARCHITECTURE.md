@@ -17,7 +17,7 @@
 ## World
 
 - The world is made of cubes.
-- A cube is a number: 0 = air, 1 = stone, 2 = grass, 3 = snow, 4 = bedrock, 5 = dirt.
+- A cube is a number: 0 = air, 1 = stone, 2 = grass, 3 = snow, 4 = bedrock, 5 = dirt, 6 = wood, 7 = leaves.
 - Cubes are grouped in **chunks**. One chunk = 16 × 16 cubes, 64 high.
 - What a number looks like is set in **data assets** (editor files).
 
@@ -26,10 +26,10 @@ Main menu ──"play this world"──▶ Game instance ◀──"which world?"
 
 Game mode ──1. build──▶ World ──▶ Chunk, Chunk, Chunk ...   (only around the player)
     │                    │ │ │ │    │
-    │                    │ │ │ │    ├─ "what is 2?" ──▶ Block catalog ──▶ Stone, Grass, Snow, Bedrock, Dirt
+    │                    │ │ │ │    ├─ "what is 2?" ──▶ Block catalog ──▶ Stone, Grass, Snow, Bedrock, Dirt, Wood, Leaves
     │                    │ │ │ │    └─ Chunk mesh ──▶ Block instances (one per type): draw the cubes
     │                    │ │ │ └─ "which chunks should exist?" ──▶ Chunk streaming (follows the player)
-    │                    │ │ └─ "which cubes does a new chunk have?" ──▶ Terrain generator
+    │                    │ │ └─ "which cubes does a new chunk have?" ──▶ Terrain generator ──▶ Tree generator
     │                    │ └─ "may I change this cube?" ──▶ Block rules
     │                    │
     └──2. place on top──▶ Player ──▶ Mining / Placing ──mine/place──▶ World
@@ -42,7 +42,7 @@ Game mode ──1. build──▶ World ──▶ Chunk, Chunk, Chunk ...   (onl
 
 | Folder                                               | Class                      | Job                                                                                                 | Details                                                     |
 | ---------------------------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| `Blocks/` – what a block is and what to do with it   | `UBlockDefinition`         | Material, hotbar picture, mining time, breakable information                                        | [World → Blocks and height](WORLD.md#blocks-and-height)     |
+| `Blocks/` – what a block is and what to do with it   | `UBlockDefinition`         | Material, hotbar picture, mining time, breakable, see-through                                       | [World → Blocks and height](WORLD.md#blocks-and-height)     |
 |                                                      | `UBlockCatalog`            | List of block types. Says which block the terrain puts at which height                              | [World → Blocks and height](WORLD.md#blocks-and-height)     |
 |                                                      | `FBlockRules`              | Says if a cube may be mined, or placed somewhere                                                    | [Player → Rules](PLAYER.md#rules)                           |
 | `World/` – where blocks are                          | `VoxelTypes.h`             | Converts positions: cm ↔ cube ↔ chunk                                                               | [World → Positions](WORLD.md#positions)                     |
@@ -52,7 +52,8 @@ Game mode ──1. build──▶ World ──▶ Chunk, Chunk, Chunk ...   (onl
 |                                                      | `AVoxelChunk`              | One piece of the world. Keeps its numbers                                                           | [World → Chunk](WORLD.md#chunk)                             |
 | `Rendering/` – how blocks are drawn                  | `UChunkMeshComponent`      | Decides which cubes of one chunk are visible, and of which type                                     | [World → Redrawing](WORLD.md#redrawing-after-a-change)      |
 |                                                      | `UBlockInstancesComponent` | Draws all cubes of one type in one chunk. Adds or removes a single cube, knows which cells it draws | [World → Redrawing](WORLD.md#redrawing-after-a-change)      |
-| `Terrain/` – how the hills are made                  | `FTerrainGenerator`        | Says how high the ground is at one spot. Makes the cubes of a new chunk                             | [World → Terrain](WORLD.md#terrain)                         |
+| `Terrain/` – how the hills and trees are made        | `FTerrainGenerator`        | Says how high the ground is at one spot. Makes the cubes of a new chunk                             | [World → Terrain](WORLD.md#terrain)                         |
+|                                                      | `FTreeGenerator`           | Says where trees stand and which cubes they are made of. Adds them to a new chunk                   | [World → Trees](WORLD.md#trees)                             |
 | `Player/` – the player, and what they do with blocks | `AKubeCraftCharacter`      | Walk, look, jump                                                                                    | [Player → Mining and placing](PLAYER.md#mining-and-placing) |
 |                                                      | `ULookTargetComponent`     | Which cube am I looking at?                                                                         | [Player → Mining and placing](PLAYER.md#mining-and-placing) |
 |                                                      | `UMiningComponent`         | Mines cube after its mining time                                                                    | [Player → Mining and placing](PLAYER.md#mining-and-placing) |
@@ -73,6 +74,7 @@ Game mode ──1. build──▶ World ──▶ Chunk, Chunk, Chunk ...   (onl
 | `M_BlockCrack` + `T_Crack` | Cracks that grow with mining progress                            | [Player → What the player sees](PLAYER.md#what-the-player-sees-in-the-world) |
 | `T_Block_*`                | Picture of each block type                                       | [Player → HUD](PLAYER.md#hud)                                                |
 | `M_Block` + `MI_Block_*`   | Look of a block: top, side and bottom texture, times a colour    | [Player → What the player sees](PLAYER.md#what-the-player-sees-in-the-world) |
+| `M_Leaves`                 | Like `M_Block`, with holes (Masked, holes from `T_Block_Leaves`) | [World → Chunk](WORLD.md#chunk)                                              |
 | `BP_KubeCraftGameInstance` | Remembers which world is played. Creates, loads, saves worlds    | [Menus → From menu to world](MENUS.md#from-menu-to-world)                    |
 | `BP_KubeCraftGameMode`     | Builds a new or a saved world (Start World)                      | [Menus → Starting the world](MENUS.md#starting-the-world)                    |
 | `BP_MainMenuGameMode`      | Menu level: no player, shows the main menu                       | [Menus → From menu to world](MENUS.md#from-menu-to-world)                    |
@@ -91,7 +93,8 @@ Game mode ──1. build──▶ World ──▶ Chunk, Chunk, Chunk ...   (onl
 4. The character shows the HUD.
 5. While playing, the chunk streaming loads new chunks in front of the player and unloads the ones behind.
 
-Playing `L_World` straight from the editor skips step 1: a new world with a random seed.
+The editor opens `L_MainMenu`, so Play starts at step 1. To skip it, open `L_World` first and press Play:
+a new world with a random seed.
 
 ## Files
 
@@ -122,6 +125,8 @@ Saved/SaveGames/           saved worlds
 | Change a mining/placing limit             | `Blocks/BlockRules.cpp`                                                                      |
 | Change player size / jump                 | Numbers at the top of `Player/KubeCraftCharacter.cpp`                                        |
 | Change the hills                          | `BP_VoxelWorld` → Terrain                                                                    |
+| Change how many trees grow, how tall      | `BP_VoxelWorld` → Terrain → Trees                                                            |
+| Make a block see-through                  | Turn on `bSeeThrough`. Its material: Blend Mode Masked, holes into Opacity Mask              |
 | Change which block is at which height     | `DA_BlockCatalog` → HeightBands (`Block`, and `TopBlock` for the top cube, e.g. grass)       |
 | Change how far the player sees            | Settings → Video → View distance                                                             |
 | Change how fast new chunks appear         | Settings → Video → Chunks per frame (higher = faster, frames may take longer)                |
@@ -142,20 +147,22 @@ Saved/SaveGames/           saved worlds
 - **Unit tests** check one piece alone, with no world.
 - **Integration tests** need real chunks. A small temporary world is built (`TestVoxelWorld.h`).
 
-| Test                                      | Tests code in                | Checks                                                                                                      |
-| ----------------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `KubeCraft.World.Coordinates`             | `World/VoxelTypes.h`         | Position conversions, also negative ones. Which cube a hit means                                            |
-| `KubeCraft.World.ParseSeed`               | `World/VoxelWorld`           | Which typed-in text is a seed: `-42` yes; `12.5`, `abc` or a too big number no                              |
-| `KubeCraft.Blocks.HeightBands`            | `Blocks/BlockCatalog`        | Which block goes at which height, and the top block of a band                                               |
-| `KubeCraft.Terrain.Generator`             | `Terrain/TerrainGenerator`   | Same seed → same hills. Other seed → other hills                                                            |
-| `KubeCraft.Terrain.TerrainBlock`          | `Terrain/TerrainGenerator`   | The cube at one spot is the same as in the whole generated chunk; only the top cube gets the top block      |
-| `KubeCraft.Integration.BlockRules`        | `Blocks/BlockRules`          | What may be mined, where a block may be placed                                                              |
-| `KubeCraft.Integration.MineAndPlace`      | `World/VoxelWorld`           | Mining and placing can change blocks. Placed type is the given type. A border change redraws the next chunk |
-| `KubeCraft.Integration.IncrementalRedraw` | `Rendering/`                 | After many changes, only cubes that touch air are drawn, each with its right type                           |
-| `KubeCraft.Integration.ChunkStreaming`    | `World/ChunkStreaming…`      | Start draws the middle. Right chunks load, draw, unload. No walls. A few per call. Changes come back        |
-| `KubeCraft.Integration.StreamingSettings` | `Game/KubeCraftUserSettings` | Settings stay in range, defaults. A new view distance while playing draws the bigger circle                 |
-| `KubeCraft.Integration.SaveLoad`          | `World/VoxelWorld`           | A save has the seed and all changes. A loaded world has them, drawn around the player. Unneeded ones go     |
-| `KubeCraft.Integration.CustomSeed`        | `World/VoxelWorld`           | A typed-in seed wins over the random one. After building, a new seed changes nothing                        |
+| Test                                      | Tests code in                | Checks                                                                                                       |
+| ----------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `KubeCraft.World.Coordinates`             | `World/VoxelTypes.h`         | Position conversions, also negative ones. Which cube a hit means                                             |
+| `KubeCraft.World.ParseSeed`               | `World/VoxelWorld`           | Which typed-in text is a seed: `-42` yes; `12.5`, `abc` or a too big number no                               |
+| `KubeCraft.Blocks.HeightBands`            | `Blocks/BlockCatalog`        | Which block goes at which height, and the top block of a band                                                |
+| `KubeCraft.Terrain.Generator`             | `Terrain/TerrainGenerator`   | Same seed → same hills. Other seed → other hills                                                             |
+| `KubeCraft.Terrain.TerrainBlock`          | `Terrain/TerrainGenerator`   | The cube at one spot is the same as in the whole generated chunk; only the top cube gets the top block       |
+| `KubeCraft.Terrain.Trees`                 | `Terrain/TreeGenerator`      | Trunks 1 wide, 4 – 6 tall, on grass. Trees only fill air, match across chunk borders, same seed → same trees |
+| `KubeCraft.Integration.BlockRules`        | `Blocks/BlockRules`          | What may be mined, where a block may be placed                                                               |
+| `KubeCraft.Integration.MineAndPlace`      | `World/VoxelWorld`           | Mining and placing can change blocks. Placed type is the given type. A border change redraws the next chunk  |
+| `KubeCraft.Integration.IncrementalRedraw` | `Rendering/`                 | After many changes, only cubes that touch air are drawn, each with its right type                            |
+| `KubeCraft.Integration.SeeThroughBlock`   | `Rendering/`                 | A cube under a see-through block stays drawn, under a normal block it is hidden                              |
+| `KubeCraft.Integration.ChunkStreaming`    | `World/ChunkStreaming…`      | Start draws the middle. Right chunks load, draw, unload. No walls. A few per call. Changes come back         |
+| `KubeCraft.Integration.StreamingSettings` | `Game/KubeCraftUserSettings` | Settings stay in range, defaults. A new view distance while playing draws the bigger circle                  |
+| `KubeCraft.Integration.SaveLoad`          | `World/VoxelWorld`           | A save has the seed and all changes. A loaded world has them, drawn around the player. Unneeded ones go      |
+| `KubeCraft.Integration.CustomSeed`        | `World/VoxelWorld`           | A typed-in seed wins over the random one. After building, a new seed changes nothing                         |
 
 [↑ Contents](#contents)
 

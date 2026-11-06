@@ -1,13 +1,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Terrain/TreeGenerator.h"
 #include "World/VoxelTypes.h"
 #include "TerrainGenerator.generated.h"
 
 class UBlockCatalog;
 
 /**
- * The shape of the hills, edited on the voxel world (BP_VoxelWorld).
+ * The shape of the hills and the trees on them, edited on the voxel world (BP_VoxelWorld).
  * The noise is built from layers ("octaves"): the first layer makes the big hills,
  * each next layer adds smaller and flatter bumps on top of them.
  */
@@ -39,6 +40,10 @@ struct FTerrainSettings
 	/** How much narrower each layer's bumps are than the one before it (2 = half as wide). */
 	UPROPERTY(EditAnywhere, Category = "KubeCraft|Terrain", meta = (ClampMin = "1"))
 	float Lacunarity = 2.f;
+
+	/** Which blocks trees are made of and how often they grow. */
+	UPROPERTY(EditAnywhere, Category = "KubeCraft|Terrain")
+	FTreeSettings Trees;
 };
 
 /**
@@ -56,14 +61,14 @@ struct KUBECRAFT_API FTerrainGenerator
 	int32 GetSurfaceHeight(int32 BlockX, int32 BlockY) const;
 
 	/**
-	 * Fills a whole new chunk: each column is solid up to its height.
+	 * Fills a whole new chunk: each column is solid up to its height, then the trees go on top.
 	 * The catalog picks the block type by height; the top cube of a column may get its own type (grass on dirt).
 	 */
 	TArray<FBlockId> GenerateChunk(const FIntPoint& ChunkCoord, const UBlockCatalog& Catalog) const;
 
 	/**
 	 * Gives the same answer as GenerateChunk, but for one block.
-	 * Air above the ground, otherwise the type for that height (or the top type for the top cube).
+	 * In the ground the type for that height (or the top type for the top cube); above it a tree cube or Air.
 	 */
 	FBlockId GetTerrainBlock(const FIntVector& Block, const UBlockCatalog& Catalog) const;
 
@@ -72,4 +77,7 @@ private:
 
 	/** Random shift of each noise layer, chosen from the seed. */
 	TArray<FVector2D> OctaveOffsets;
+
+	/** Puts the trees on the land. */
+	FTreeGenerator Trees;
 };

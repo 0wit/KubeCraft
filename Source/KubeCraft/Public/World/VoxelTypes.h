@@ -61,9 +61,9 @@ namespace KubeCraft::Voxel
 	inline int32 FloorDiv(int32 Value, int32 Divisor)
 	{
 		check(Divisor > 0);
-		// C++ rounds towards zero. A negative remainder means it rounded up, so step one down.
+		// C++ rounds towards zero. If that went above the real value (-1 / 16 = 0, and 0 > -1), step one down.
 		const int32 Quotient = Value / Divisor;
-		return (Value % Divisor < 0) ? Quotient - 1 : Quotient;
+		return (Quotient * Divisor > Value) ? Quotient - 1 : Quotient;
 	}
 
 	/** Block that contains the given world position. */

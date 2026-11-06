@@ -38,7 +38,7 @@ private:
 	/** Is true if at least one of the cell's 6 neighbors is not solid, so you can see a face. */
 	bool IsExposed(const AVoxelChunk& Chunk, const FIntVector& Local) const;
 
-	/** True if the cell at this local coordinate hides the face next to it. (may lie in a neighbor chunk) */
+	/** True if the cell at this local coordinate hides the face next to it: not Air and not see-through. (may lie in a neighbor chunk) */
 	bool IsSolidNeighbor(const AVoxelChunk& Chunk, const FIntVector& Local) const;
 
 	/** The owning chunk, or null if the owner is not an AVoxelChunk connected to its world. */

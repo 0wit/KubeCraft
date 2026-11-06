@@ -26,6 +26,8 @@ Read the `unreal-mcp` skill for parameter shapes. Editor open, PIE stopped.
    Check: `LC_ALL=C grep -aoE "Factory_[ -~]*png" Content/KubeCraft/Textures/T_Block_Sand.uasset` shows the SourceArt path.
 3. **Block asset** - `AssetTools.duplicate` `/Game/KubeCraft/Blocks/DA_Block_Stone` → `DA_Block_Sand`; set
    `Material`, `Texture`, `MineTime` (s), `bBreakable`.
+   **See-through block** (holes, like leaves): set `bSeeThrough` and duplicate `MI_Block_Leaves` instead of
+   `MI_Block_Stone` (its parent `M_Leaves` is Masked; the holes are the alpha of its `LeafMask` texture).
 4. **Catalog** - `get_properties` `DA_BlockCatalog` `Blocks`, then `set_properties` with the existing elements
    **exactly as returned** plus the new one at the end (see the array gotcha in `unreal-mcp`).
    For terrain: add a `HeightBands` entry (`MaxZ`, `Block`, optional `TopBlock` = the top cube of a column, like

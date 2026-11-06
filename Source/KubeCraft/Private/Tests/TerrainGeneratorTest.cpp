@@ -125,4 +125,140 @@ bool FTerrainBlockTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+/**
+ * Checks the promises of FTreeGenerator on hilly land with a tree in every cell that has grass:
+ * trunks are one block wide, as tall as the settings allow and stand on grass; trees only fill Air;
+ * GetTerrainBlock agrees with GenerateChunk across chunk borders; the same seed gives the same trees;
+ * and no trees grow when the ground has none of the block they grow on.
+ */
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTreeGeneratorTest, "KubeCraft.Terrain.Trees",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FTreeGeneratorTest::RunTest(const FString& Parameters)
+{
+	using namespace KubeCraft::Voxel;
+
+	// Bare stone low down, dirt with grass on top higher up, so only some columns can have a tree.
+	UBlockDefinition* Bedrock = NewObject<UBlockDefinition>();
+	UBlockDefinition* Stone = NewObject<UBlockDefinition>();
+	UBlockDefinition* Dirt = NewObject<UBlockDefinition>();
+	UBlockDefinition* Grass = NewObject<UBlockDefinition>();
+	UBlockDefinition* Wood = NewObject<UBlockDefinition>();
+	UBlockDefinition* Leaves = NewObject<UBlockDefinition>();
+	UBlockCatalog* TestCatalog = NewObject<UBlockCatalog>();
+	TestCatalog->Blocks = { Bedrock, Stone, Dirt, Grass, Wood, Leaves };
+	TestCatalog->HeightBands.SetNum(3);
+	TestCatalog->HeightBands[0].MaxZ = 1;
+	TestCatalog->HeightBands[0].Block = Bedrock;
+	TestCatalog->HeightBands[1].MaxZ = 20;
+	TestCatalog->HeightBands[1].Block = Stone;
+	TestCatalog->HeightBands[2].MaxZ = ChunkHeight;
+	TestCatalog->HeightBands[2].Block = Dirt;
+	TestCatalog->HeightBands[2].TopBlock = Grass;
+	const UBlockCatalog& Catalog = *TestCatalog;
+	const FBlockId GrassId = Catalog.GetId(Grass);
+	const FBlockId WoodId = Catalog.GetId(Wood);
+
+	FTerrainSettings Settings;
+	Settings.Trees.Trunk = Wood;
+	Settings.Trees.Leaves = Leaves;
+	Settings.Trees.GrowsOn = Grass;
+	Settings.Trees.Chance = 1.f;
+	const FTerrainGenerator Generator(42, Settings);
+	FTerrainSettings NoTreeSettings = Settings;
+	NoTreeSettings.Trees.Trunk = nullptr;
+	const FTerrainGenerator NoTrees(42, NoTreeSettings);
+
+	// 4 x 4 chunks around the origin, with negative coordinates and many chunk borders that trees cross.
+	constexpr int32 FirstChunk = -2;
+	constexpr int32 LastChunk = 1;
+	TMap<FIntPoint, TArray<FBlockId>> Chunks;
+	int32 Mismatches = 0;
+	int32 ChangedGround = 0;
+	for (int32 ChunkY = FirstChunk; ChunkY <= LastChunk; ++ChunkY)
+	{
+		for (int32 ChunkX = FirstChunk; ChunkX <= LastChunk; ++ChunkX)
+		{
+			const FIntPoint ChunkCoord(ChunkX, ChunkY);
+			const TArray<FBlockId>& Blocks = Chunks.Add(ChunkCoord, Generator.GenerateChunk(ChunkCoord, Catalog));
+			const TArray<FBlockId> Ground = NoTrees.GenerateChunk(ChunkCoord, Catalog);
+			const FIntVector Origin = ChunkToBlockOrigin(ChunkCoord);
+			for (int32 Index = 0; Index < BlocksPerChunk; ++Index)
+			{
+				const FIntVector Local(Index % ChunkSize, (Index / ChunkSize) % ChunkSize, Index / (ChunkSize * ChunkSize));
+				Mismatches += Blocks[Index] != Generator.GetTerrainBlock(Origin + Local, Catalog);
+				ChangedGround += Ground[Index] != AirBlockId && Ground[Index] != Blocks[Index];
+			}
+		}
+	}
+	TestEqual(TEXT("GetTerrainBlock = GenerateChunk, trees included"), Mismatches, 0);
+	TestEqual(TEXT("Trees only fill Air"), ChangedGround, 0);
+
+	auto GetBlock = [&Chunks](const FIntVector& Block)
+	{
+		const TArray<FBlockId>* Blocks = Chunks.Find(BlockToChunk(Block));
+		return (Blocks && Block.Z >= 0 && Block.Z < ChunkHeight) ? (*Blocks)[LocalToIndex(BlockToLocal(Block))] : AirBlockId;
+	};
+
+	// Find every trunk from its lowest wood cube, then check it from bottom to top.
+	const int32 FirstBlock = FirstChunk * ChunkSize;
+	const int32 LastBlock = (LastChunk + 1) * ChunkSize - 1;
+	int32 TreeCount = 0;
+	int32 WideTrunks = 0;
+	int32 WrongHeights = 0;
+	int32 NotOnGrass = 0;
+	for (int32 Y = FirstBlock; Y <= LastBlock; ++Y)
+	{
+		for (int32 X = FirstBlock; X <= LastBlock; ++X)
+		{
+			for (int32 Z = 1; Z < ChunkHeight; ++Z)
+			{
+				const FIntVector Block(X, Y, Z);
+				if (GetBlock(Block) != WoodId)
+				{
+					continue;
+				}
+				for (int32 Side = 0; Side < 4; ++Side)	// The first four face neighbors are the sideways ones.
+				{
+					WideTrunks += GetBlock(Block + FaceNeighborOffsets[Side]) == WoodId;
+				}
+				if (GetBlock(Block - FIntVector(0, 0, 1)) == WoodId)
+				{
+					continue;	// Not the lowest cube of its trunk.
+				}
+				++TreeCount;
+				NotOnGrass += GetBlock(Block - FIntVector(0, 0, 1)) != GrassId;
+				int32 Height = 0;
+				while (GetBlock(Block + FIntVector(0, 0, Height)) == WoodId)
+				{
+					++Height;
+				}
+				WrongHeights += Height < Settings.Trees.MinTrunkHeight || Height > Settings.Trees.MaxTrunkHeight;
+			}
+		}
+	}
+	TestTrue(TEXT("Some trees grew"), TreeCount > 0);
+	TestEqual(TEXT("Trunks are one block wide"), WideTrunks, 0);
+	TestEqual(TEXT("Trunk heights between Min and Max"), WrongHeights, 0);
+	TestEqual(TEXT("Every trunk stands on grass"), NotOnGrass, 0);
+
+	TestTrue(TEXT("Same seed -> same trees"),
+		FTerrainGenerator(42, Settings).GenerateChunk(FIntPoint(0, 0), Catalog) == Chunks[FIntPoint(0, 0)]);
+
+	// Trees that grow on a block the ground never has: none at all.
+	FTerrainSettings NowhereSettings = Settings;
+	NowhereSettings.Trees.GrowsOn = Leaves;
+	const FTerrainGenerator Nowhere(42, NowhereSettings);
+	int32 WoodWithoutGround = 0;
+	for (const TPair<FIntPoint, TArray<FBlockId>>& Pair : Chunks)
+	{
+		for (const FBlockId Id : Nowhere.GenerateChunk(Pair.Key, Catalog))
+		{
+			WoodWithoutGround += Id == WoodId;
+		}
+	}
+	TestEqual(TEXT("No grass -> no trees"), WoodWithoutGround, 0);
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

@@ -150,4 +150,31 @@ bool FIncrementalRedrawTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+/**
+ * Checks that a see-through block (leaves) does not hide the cube under it, while a normal block does.
+ * The ground is flat stone, so a stone with a cube placed on top of it is covered on all six sides.
+ */
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSeeThroughBlockTest, "KubeCraft.Integration.SeeThroughBlock",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FSeeThroughBlockTest::RunTest(const FString& Parameters)
+{
+	const FTestVoxelWorld Test;
+	if (!TestNotNull(TEXT("Test world"), Test.World))
+	{
+		return false;
+	}
+	Test.Snow->bSeeThrough = true;
+
+	const FIntVector UnderSeeThrough(0, 0, FTestVoxelWorld::GroundHeight - 1);
+	const FIntVector UnderStone(4, 4, FTestVoxelWorld::GroundHeight - 1);
+	TestTrue(TEXT("Place a see-through block"), Test.World->PlaceBlock(UnderSeeThrough + FIntVector(0, 0, 1), Test.Snow));
+	TestTrue(TEXT("Place a normal block"), Test.World->PlaceBlock(UnderStone + FIntVector(0, 0, 1), Test.Stone));
+
+	const FTestVoxelWorld::FDrawnCubes Drawn = Test.GetDrawnCubes();
+	TestTrue(TEXT("Cube under a see-through block stays drawn"), Drawn.MeshPerBlock.Contains(UnderSeeThrough));
+	TestFalse(TEXT("Cube under a normal block is hidden"), Drawn.MeshPerBlock.Contains(UnderStone));
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

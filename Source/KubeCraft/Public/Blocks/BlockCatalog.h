@@ -67,6 +67,7 @@ protected:
 	/** The automation tests fill Blocks and HeightBands directly; in the game they are only edited in the asset. */
 	friend class FBlockCatalogHeightBandsTest;
 	friend class FTerrainBlockTest;
+	friend class FTreeGeneratorTest;
 	friend struct FTestVoxelWorld;
 
 	/**

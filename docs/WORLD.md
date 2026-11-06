@@ -6,7 +6,7 @@
 
 [Why chunks?](#why-chunks) · [Positions](#positions) · [Chunk](#chunk) ([Chunk borders](#chunk-borders))
 · [Redrawing after a change](#redrawing-after-a-change) · [Streaming](#streaming) · [Terrain](#terrain)
-· [Blocks and height](#blocks-and-height)
+· [Blocks and height](#blocks-and-height) · [Trees](#trees)
 
 ## Why chunks?
 
@@ -41,6 +41,8 @@ Side view of a tiny chunk:
 
 - A chunk keeps one number per cube.
 - Only cubes that touch air are drawn.
+- A **see-through** cube (leaves, `bSeeThrough` in its block asset) counts as air for its neighbors. Its
+  material has holes, so the cube behind it must stay drawn.
 - All stone cubes of a chunk are drawn as one object, all grass cubes as another.
 - Few objects draw fast.
 
@@ -73,11 +75,11 @@ A changed cube can only affect itself and the 6 cubes touching it. So the world 
 
 For each of the 7, the chunk compares what **should** be drawn with what **is** drawn now:
 
-| Cell is…                     | Should be drawn? |
-| ---------------------------- | ---------------- |
-| Air                          | No               |
-| Solid, touches air           | Yes, its type    |
-| Solid, buried on all 6 sides | No               |
+| Cell is…                                 | Should be drawn? |
+| ---------------------------------------- | ---------------- |
+| Air                                      | No               |
+| Solid, touches air or a see-through cube | Yes, its type    |
+| Solid, buried on all 6 sides             | No               |
 
 | Should be | Is drawn now | What happens                    |
 | --------- | ------------ | ------------------------------- |
@@ -179,6 +181,32 @@ noise 0.25  →  20 + 6 = 26 cubes high
 - This rule is only for the generated terrain. A placed cube is the type of the selected slot.
 - Bottom of the world = 0.
 - Top of the world = 64.
+
+## Trees
+
+`FTreeGenerator`
+
+- The land is split into square **cells** of 7 × 7 columns. Each cell has at most one tree.
+- The seed and the cell decide: is there a tree (40 %), on which column, how tall its trunk is (4 – 6).
+- A tree grows only where the top cube of the column is grass.
+- The trunk is 1 cube wide and stands 2 columns away from the cell's edge. So the leaves stay inside the cell
+  and two trees never touch.
+
+```
+ side view                         top view of one cell
+   . . L . .   ← small layer         . . . . . . .
+   L L W L L   ← 2 wide layers       . . L L L . .
+   L L W L L                         . L L L L L .
+       W       ← trunk (wood)        . L L W L L .
+       W                             . L L L L L .
+   ─── G ───   ← grass               . . L L L . .
+                                     . . . . . . .
+```
+
+- A tree only fills air. Where a hill is in the way, the hill stays.
+- A tree that would reach above the top of the world does not grow.
+- Same seed → same trees. Like the land, a tree is not saved, only changes to it.
+- A new chunk asks every cell that covers part of it. So a tree across a chunk border is the same on both sides.
 
 [↑ Contents](#contents) · [Overview](ARCHITECTURE.md#contents)
 

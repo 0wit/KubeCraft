@@ -36,4 +36,11 @@ public:
 	/** False for blocks the player can never remove. (bedrock only for now) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "KubeCraft|Block")
 	bool bBreakable = true;
+
+	/**
+	 * True for blocks with holes in their material (leaves). Cubes next to them stay drawn, so you can see through
+	 * the holes. Normal blocks hide a cube that is covered on all six sides.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "KubeCraft|Block")
+	bool bSeeThrough = false;
 };

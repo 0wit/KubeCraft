@@ -101,6 +101,34 @@ Call it over HTTP: `MCP_STATE_DIR=<scratchpad> bash .claude/skills/unreal-mcp/sc
 - No tool can set (or read) a Blueprint **function description** / node comments: `ObjectTools` can't read K2Node
   properties (`MetaData`, `NodeComment`), the DSL has no syntax for it. Ask the user (select the function → Details →
   Graph → Description). To *read* comments, grep the saved `.uasset`: `LC_ALL=C grep -aoE "[ -~]{25,}" file | grep " "`.
+- `set_properties` on a Blueprint's defaults (`/Game/.../BP_X.Default__BP_X_C`) does **not** reach actors already
+  placed in a level (the Details panel would). Set the same values on the level actor too
+  (`/Game/.../Maps/L_X.L_X:PersistentLevel.BP_X_C_0`) - equal to the default, so no override is stored - and save the map.
+- Masked material made via MCP (`BlendMode` = `BLEND_Masked`, alpha → `MP_OpacityMask`, `recompile`) can still render
+  solid. Check the thumbnail (below); if it has no holes, ask the user to open the material and press **Apply**.
+- See an asset: `CaptureAssetImage {"assetPath": ...}` returns base64. `execute_tool_script` can't import `base64` -
+  use `call.sh ... CaptureAssetImage ... | sed -E 's/.*"data":"([^"]+)".*/\1/' | base64 -d > thumb.png`, then Read it.
+  To see what drives a pin, temporarily connect it to `MP_BaseColor`, look, connect the old expression back.
+- `PlayerController.ControlRotation` can't be set (where the player looks). Simulate (`bSimulate: true`) has no
+  player: `SetCameraTransform` moves the view freely, but `ScreenCoordsToWorld` does not hit the chunks.
+- Ground height at a spot during PIE: `set_actor_transform` the pawn high above it (z 6400), `sleep 6-8` (the editor
+  is slow in the background), read z again. Far-away spots need streaming time first.
+
+## Console commands (no MCP tool)
+Type them into the editor's **Cmd** box with `SlateInspectorToolset.SlateInspectorToolset`:
+1. `Observe {"ref": "", "maxDepth": 60}`, then `Snapshot {"ref": "", "maxDepth": 60}`.
+2. The box is the `textbox` right after the `"Cmd"` combobox at the bottom (e.g. `[ref=tb3]`).
+3. `Type {"ref": "tb3", "text": "HighResShot 1920x1080", "submit": true}`, then `Unobserve`.
+- `HighResShot` during PIE = exactly what the player sees, without the HUD, with the game's exposure. File:
+  `Saved/Screenshots/WindowsEditor/HighresScreenshotNNNNN.png` (log: "High resolution screenshot saved").
+- **Editor Python** runs from the same box: `py "<path>/script.py"` (`import unreal`, `unreal.log(...)` shows in the
+  log). Use it for what no tool does, e.g. **reimport a texture from a new file** keeping its links:
+  `unreal.AssetImportTask()` with `filename`, `destination_path`, `destination_name` = the existing asset,
+  `replace_existing = True`, `automated = True`, `save = True`, then
+  `unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks([task])`. Check the texture settings afterwards
+  (they can fall back to defaults) and the new path (`grep -aoE "Factory_[ -~]*png" <file>.uasset`).
+- `Type` returns `false` (and `Windows list` is empty) when the editor is minimized - restore it first
+  (PowerShell `ShowWindow(handle, 9)` via user32), then snapshot again.
 
 ## Building widget logic
 - New WBP: `UMGToolSet.CreateWidgetBlueprint {folderPath, assetName, parentClass: /Script/UMG.UserWidget}`, then

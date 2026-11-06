@@ -129,7 +129,15 @@ bool UChunkMeshComponent::IsSolidNeighbor(const AVoxelChunk& Chunk, const FIntVe
 	}
 	// Across a chunk border the chunk asks the world. A chunk that is not loaded counts as air.
 	// the streaming loads all four neighbors before it draws a chunk to prevent that.
-	return Chunk.GetBlockOrNeighbor(Local) != AirBlockId;
+	const FBlockId Id = Chunk.GetBlockOrNeighbor(Local);
+	if (Id == AirBlockId)
+	{
+		return false;
+	}
+	// You can look through the holes of a see-through block (leaves), so it hides nothing.
+	const UBlockCatalog* Catalog = Chunk.GetVoxelWorld()->GetCatalog();
+	const UBlockDefinition* Definition = Catalog ? Catalog->GetDefinition(Id) : nullptr;
+	return !(Definition && Definition->bSeeThrough);
 }
 
 const AVoxelChunk* UChunkMeshComponent::FindInitializedChunk() const

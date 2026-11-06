@@ -16,6 +16,8 @@ input** - mining, placing, walking and the hotbar are still play-tested by the u
   while assets load - just retry. If the `mcp__unreal__*` tools stay unavailable, ask the user to run `/mcp`.
 
 ## 2. Play
+The editor starts in `L_MainMenu` (PIE there = the menu, no world). For the world, open `L_World` first:
+`editor_toolset.toolsets.scene.SceneTools` `load_level {"level_path": "/Game/KubeCraft/Maps/L_World"}`.
 ```
 call_tool EditorToolset.EditorAppToolset StartPIE
   {"options": {"bSimulate": false, "playMode": "PlayMode_InViewPort", "warmupSeconds": 3}}

@@ -19,6 +19,7 @@ namespace
 
 FTerrainGenerator::FTerrainGenerator(int32 Seed, const FTerrainSettings& InSettings)
 	: Settings(InSettings)
+	, Trees(Seed, InSettings.Trees)
 {
 	FRandomStream Random(Seed);
 	const int32 NumOctaves = FMath::Max(1, Settings.Octaves);
@@ -76,15 +77,20 @@ TArray<FBlockId> FTerrainGenerator::GenerateChunk(const FIntPoint& ChunkCoord, c
 			}
 		}
 	}
+	Trees.AddTrees(ChunkCoord, Blocks, *this, Catalog);
 	return Blocks;
 }
 
 FBlockId FTerrainGenerator::GetTerrainBlock(const FIntVector& Block, const UBlockCatalog& Catalog) const
 {
 	const int32 Height = GetSurfaceHeight(Block.X, Block.Y);
-	if (Block.Z < 0 || Block.Z >= Height)
+	if (Block.Z < 0 || Block.Z >= ChunkHeight)
 	{
 		return AirBlockId;
+	}
+	if (Block.Z >= Height)
+	{
+		return Trees.GetTreeBlock(Block, *this, Catalog);
 	}
 	return Catalog.GetIdForHeight(Block.Z, /*bIsTop*/ Block.Z == Height - 1);
 }
