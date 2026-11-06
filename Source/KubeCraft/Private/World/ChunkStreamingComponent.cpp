@@ -11,7 +11,11 @@ namespace
 {
 	/** Steps from a chunk to itself and to the four chunks that share a border with it. */
 	const FIntPoint ChunkAndNeighbors[] = {
-		FIntPoint(0, 0), FIntPoint(1, 0), FIntPoint(-1, 0), FIntPoint(0, 1), FIntPoint(0, -1),
+		FIntPoint(0, 0),
+		FIntPoint(1, 0),
+		FIntPoint(-1, 0),
+		FIntPoint(0, 1),
+		FIntPoint(0, -1),
 	};
 
 	/**
@@ -35,7 +39,8 @@ namespace
 				}
 			}
 		}
-		Offsets.Sort([](const FIntPoint& A, const FIntPoint& B) { return A.SizeSquared() < B.SizeSquared(); });
+		Offsets.Sort([](const FIntPoint& A, const FIntPoint& B)
+					 { return A.SizeSquared() < B.SizeSquared(); });
 		return Offsets;
 	}
 }
@@ -55,7 +60,7 @@ void UChunkStreamingComponent::LoadAllAround(const FIntPoint& CenterChunk)
 }
 
 void UChunkStreamingComponent::TickComponent(float DeltaTime, ELevelTick TickType,
-	FActorComponentTickFunction* ThisTickFunction)
+											 FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
@@ -99,7 +104,7 @@ bool UChunkStreamingComponent::UpdateAround(const FIntPoint& CenterChunk, int32 
 		return true;
 	};
 
-	// 1. Draw, nearest first, so the ground under the player comes first. A chunk's border cubes look into its
+	// 1. Draw, nearest first, the ground under the player comes first. A chunk's border cubes look into its
 	//    four neighbors, so the chunk and its neighbors are loaded right before it is drawn.
 	for (const FIntPoint& Offset : GetOffsetsNearestFirst())
 	{
@@ -126,7 +131,7 @@ bool UChunkStreamingComponent::UpdateAround(const FIntPoint& CenterChunk, int32 
 		World->DrawChunk(Coord);
 	}
 
-	// 2. Unload the far chunks - after drawing, so new ground never waits for old chunks to go.
+	// 2. Unload the far chunks after drawing, so new ground never waits for old chunks to go.
 	const int32 UnloadDistance = ViewDistanceInChunks + UnloadMarginInChunks;
 	for (const FIntPoint& Coord : World->GetLoadedChunks())
 	{

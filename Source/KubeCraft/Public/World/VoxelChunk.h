@@ -9,9 +9,9 @@ class AVoxelWorld;
 class UChunkMeshComponent;
 
 /**
- * One ChunkSize x ChunkSize x ChunkHeight column of the world, created, filled and destroyed by AVoxelWorld.
- * It remembers its blocks in a flat array of FBlockId (one byte per cube, see LocalToIndex);
- * its UChunkMeshComponent turns them into visible cubes.
+ * One column of the world.
+ * Stores which block sits in each cell, using one byte per cube (FBlockId).
+ * Its mesh component turns those bytes into visible cubes.
  */
 UCLASS(NotPlaceable)
 class KUBECRAFT_API AVoxelChunk : public AActor
@@ -19,7 +19,7 @@ class KUBECRAFT_API AVoxelChunk : public AActor
 	GENERATED_BODY()
 
 public:
-	/** Creates an empty (all Air) chunk with its mesh component as the root. */
+	/** Creates an empty (all air) chunk with its mesh component as the root. */
 	AVoxelChunk();
 
 	/** Connects the chunk to its world (catalog, block mesh, neighbors) and tells it where it is. Call once, right after spawning. */
@@ -28,41 +28,40 @@ public:
 	/** The world this chunk belongs to, e.g. to find the world from a trace hit on the chunk. */
 	AVoxelWorld* GetVoxelWorld() const { return VoxelWorld; }
 
-	/** Block at a local coordinate. Returns Air for coordinates outside the chunk. */
+	/** Returns the block at a local cell. If the cell is outside the chunk, it returns air. */
 	FBlockId GetBlock(const FIntVector& Local) const;
 
 	/**
-	 * Block at a local coordinate that may lie just outside this chunk (e.g. X = -1): such blocks are read
-	 * from the neighbor chunk through the world. Air above and below the world and beyond its edge.
+	 * Same, but the cell may be just outside the chunk.
+	 * Then asks the world, which reads the neighbor chunk.
+	 * Above or below the world it returns air, because the chunk is as tall as the world.
+	 * The mesh needs this to decide whether a cube face on the chunk border is hidden.
 	 */
 	FBlockId GetBlockOrNeighbor(const FIntVector& Local) const;
 
 	/**
-	 * Changes one block. Returns true if the block changed; false if the cell already held this id, and
-	 * false (with an ensure) for coordinates outside the chunk and ids not in the catalog.
-	 * Does not update the visuals. After one change, the cell and its six neighbors must be redrawn, and some
-	 * neighbors may lie in other chunks: AVoxelWorld::SetBlockAndRedraw does both. After many changes, call RebuildMesh().
+	 * Changes one cell. Returns true only if the block really changed.
+	 * Returns false if the cell already held that id.
 	 */
 	bool SetBlock(const FIntVector& Local, FBlockId Id);
 
 	/**
-	 * Replaces every block at once, e.g. with a freshly generated chunk (see FTerrainGenerator::GenerateChunk).
-	 * Needs exactly BlocksPerChunk ids, all known to the catalog; otherwise nothing changes (with an ensure).
-	 * Does not update the visuals.
+	 * Replaces the whole array at once (for example with freshly generated terrain)
+	 * The array must have exactly BlocksPerChunk entries and only known ids, or nothing changes.
 	 */
 	void SetAllBlocks(TArray<FBlockId>&& NewBlocks);
 
-	/** Redraws all cubes from the block array, e.g. once after the chunk and its neighbors are filled. */
+	/** Redraws every cube from the array, then marks the chunk as drawn. */
 	void RebuildMesh();
 
-	/** True once RebuildMesh() has run, i.e. the chunk shows its cubes. */
+	/** true once RebuildMesh() has run. */
 	bool IsDrawn() const { return bDrawn; }
 
-	/** Redraws the cube of one cell only, e.g. after it or a neighbor changed. */
+	/** Redraws a single cell. Use it after that cell or one of its neighbors changed. */
 	void RedrawBlock(const FIntVector& Local);
 
 private:
-	/** True for Air and for ids that have a definition in the catalog - the only ids a chunk may store. */
+	/** True for Air or an id the catalog has a definition for. */
 	bool IsKnownBlock(FBlockId Id) const;
 
 	/** Draws the blocks; also the root, so it sits at the chunk's first block. */

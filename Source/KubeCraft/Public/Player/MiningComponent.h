@@ -25,24 +25,20 @@ public:
 	/** Ticks only while the mine button is held. */
 	UMiningComponent();
 
-	/** Mine button pressed: start timing the targeted block. */
+	/** Clears old progress and turns ticking on. */
 	void StartMining();
 
-	/** Mine button released: stop and forget the progress. */
+	/** Turns ticking off and clears progress. */
 	void StopMining();
 
-	/** Advances the timer on the targeted block and mines it when the time is up. */
+	/** Times how long you look at the same block and mines it once MineTime is reached. */
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	/**
-	 * For visuals such as the crack overlay: the block being mined right now, its centre (cm) and how far along
-	 * it is (0 = just started, 1 = about to break). Returns false, and leaves the outputs unchanged, if nothing is being mined.
-	 * Pure because it is cheap (no trace), so running it once per connected pin is fine.
-	 */
+	/** Gives Blueprints the mined block's centre and its progress from 0 to 1. */
 	UFUNCTION(BlueprintPure, Category = "KubeCraft|Mining", meta = (ReturnDisplayName = "Is Mining"))
 	bool GetMiningProgress(FVector& BlockCenter, float& Progress) const;
 
-	/** Fires once per block this component breaks, so that others (such as the inventory) can collect it. */
+	/** Fires once for each block broken, with its type (in Blueprints) */
 	UPROPERTY(BlueprintAssignable, Category = "KubeCraft|Mining")
 	FOnBlockMined OnBlockMined;
 
@@ -51,7 +47,7 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	/** Forgets the block being mined, so the next tick starts from zero. */
+	/** Forgets the current block and sets the timer back to 0 */
 	void ResetProgress();
 
 	/** The owner's aim; tells which block is targeted. Null if the owner has none (then nothing is mined). */

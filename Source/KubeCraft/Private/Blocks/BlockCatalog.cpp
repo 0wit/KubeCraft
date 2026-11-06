@@ -29,6 +29,8 @@ FBlockId UBlockCatalog::GetIdForHeight(int32 Z) const
 	return HeightBands.IsEmpty() ? AirBlockId : GetId(HeightBands.Last().Block);
 }
 
+// runs only in the editor and checks the asset when you save it.
+// possible errors: too many blocks, empty slots, missing materials, duplicates, and bad height bands.
 #if WITH_EDITOR
 EDataValidationResult UBlockCatalog::IsDataValid(FDataValidationContext& Context) const
 {
@@ -61,9 +63,9 @@ EDataValidationResult UBlockCatalog::IsDataValid(FDataValidationContext& Context
 		}
 		if (Block && !Block->Texture)
 		{
-			// Not an error: the game works, the hotbar just shows an empty picture for this block.
-			Context.AddWarning(FText::Format(LOCTEXT("MissingTexture", "Block '{0}' has no texture; its hotbar slot shows no picture."),
-				FText::FromString(Block->GetName())));
+			// Not an error: the game works, the inventory slot just shows an empty picture for this block.
+			Context.AddWarning(FText::Format(LOCTEXT("MissingTexture", "Block '{0}' has no texture; its inventory slot shows no picture."),
+											 FText::FromString(Block->GetName())));
 		}
 	}
 
@@ -77,7 +79,7 @@ EDataValidationResult UBlockCatalog::IsDataValid(FDataValidationContext& Context
 		if (Band.MaxZ <= 0 || Band.MaxZ > KubeCraft::Voxel::ChunkHeight)
 		{
 			AddError(FText::Format(LOCTEXT("BandOutsideWorld", "HeightBands[{0}].MaxZ must be between 1 and {1} (the world height)."),
-				Index, KubeCraft::Voxel::ChunkHeight));
+								   Index, KubeCraft::Voxel::ChunkHeight));
 		}
 		if (Index > 0 && Band.MaxZ <= HeightBands[Index - 1].MaxZ)
 		{

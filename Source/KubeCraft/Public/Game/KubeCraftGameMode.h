@@ -16,15 +16,13 @@ class KUBECRAFT_API AKubeCraftGameMode : public AGameModeBase
 	GENERATED_BODY()
 
 public:
-	/** Calls StartWorld with the voxel world placed in the level, then lets everything begin play. */
+	/** Finds the world, builds it, lets everything start. */
 	virtual void StartPlay() override;
 
 protected:
 	/**
-	 * Builds the voxel world and puts the players on it. By default a new world, with every player on the ground at
-	 * its center. A Blueprint can override it to load a save instead (AVoxelWorld::GenerateFromSave) and put the
-	 * player back where they were. The pawns exist here, but nothing has begun play yet.
-	 * VoxelWorld is never null: StartPlay only calls this when the level has one.
+	 * Makes a new world and puts each player's feet on the ground at the center.
+	 * BP_KubeCraftGameMode can replace it to load a save instead.
 	 */
 	UFUNCTION(BlueprintNativeEvent, Category = "KubeCraft|Game")
 	void StartWorld(AVoxelWorld* VoxelWorld);

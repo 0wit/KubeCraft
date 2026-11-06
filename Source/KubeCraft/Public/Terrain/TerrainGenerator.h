@@ -16,7 +16,7 @@ struct FTerrainSettings
 {
 	GENERATED_BODY()
 
-	/** Average ground height in blocks: the height where the noise is zero. */
+	/** Average ground height in blocks: the height where the noise is 0. */
 	UPROPERTY(EditAnywhere, Category = "KubeCraft|Terrain", meta = (ClampMin = "1"))
 	int32 BaseHeight = 20;
 
@@ -42,9 +42,7 @@ struct FTerrainSettings
 };
 
 /**
- * Decides the land: for every column of blocks it tells how high the ground is, and it fills new chunks with blocks.
- * The answer depends only on the seed, the settings and the column, so a seed always rebuilds the same world -
- * which is why a chunk can be unloaded and made again later.
+ * Decides what the land looks like. Same seed always makes the same world.
  */
 struct KUBECRAFT_API FTerrainGenerator
 {
@@ -52,20 +50,20 @@ struct KUBECRAFT_API FTerrainGenerator
 	FTerrainGenerator(int32 Seed, const FTerrainSettings& InSettings);
 
 	/**
-	 * Number of solid blocks in the column at block (X, Y), counted from the bottom of the world.
-	 * Always at least 1 (there is a floor) and below ChunkHeight (there is room to build on top).
+	 * Adds up the noise layers (big hills plus smaller bumps) to get the ground height of one column.
+	 * Kept between 1 and ChunkHeight - 1.
 	 */
 	int32 GetSurfaceHeight(int32 BlockX, int32 BlockY) const;
 
 	/**
-	 * The blocks of a chunk as the terrain makes them, before any player change: each column is solid up to its
-	 * surface height, and the catalog's height bands pick the block type. Indexed like a chunk (see LocalToIndex).
+	 * Fills a whole new chunk: each column is solid up to its height.
+	 * The catalog picks the block type by height.
 	 */
 	TArray<FBlockId> GenerateChunk(const FIntPoint& ChunkCoord, const UBlockCatalog& Catalog) const;
 
 	/**
-	 * The block the terrain puts at one world block coordinate, before any player change - the same answer as
-	 * GenerateChunk, for a single block. Air above the surface and outside the world.
+	 * Gives the same answer as GenerateChunk, but for one block.
+	 * Air above the ground, otherwise the type for that height.
 	 */
 	FBlockId GetTerrainBlock(const FIntVector& Block, const UBlockCatalog& Catalog) const;
 

@@ -9,13 +9,13 @@
 
 void AKubeCraftGameMode::StartPlay()
 {
-	// At this point the players have already joined and got their pawns, but nothing has begun play yet.
-	// So the world is built first and the pawns are moved onto it before they start falling.
+	// The world is built first and the pawn is moved onto it before it starts falling.
 	if (AVoxelWorld* VoxelWorld = FindVoxelWorld())
 	{
 		StartWorld(VoxelWorld);
 	}
 
+	// If it came first, the pawn would begin play (and start falling) before any ground existed.
 	Super::StartPlay();
 }
 

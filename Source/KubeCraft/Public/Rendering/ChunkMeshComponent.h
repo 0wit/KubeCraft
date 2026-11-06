@@ -10,12 +10,7 @@ class AVoxelWorld;
 class UBlockInstancesComponent;
 
 /**
- * Decides which blocks of the chunk that owns it are visible, and hands them to one UBlockInstancesComponent
- * per block type (each type has its own material). Blocks buried on all six sides are skipped, so
- * underground terrain costs nothing to render.
- *
- * It is the chunk's root, so it sits at the chunk's first block and local block coordinates map directly
- * to the relative positions of the cubes.
+ *  Draws one chunk. It keeps one mesh per block type and draws only the blocks you can see.
  */
 UCLASS()
 class KUBECRAFT_API UChunkMeshComponent : public USceneComponent
@@ -23,34 +18,33 @@ class KUBECRAFT_API UChunkMeshComponent : public USceneComponent
 	GENERATED_BODY()
 
 public:
-	/** Recreates all cubes from the owning chunk's blocks, e.g. once after the world is filled. */
+	/** Redraws the whole chunk. It runs once, after the chunk is filled. */
 	void Rebuild();
 
 	/**
-	 * Updates the cube of one cell after it or one of its neighbors changed: adds, removes or swaps it.
-	 * Only this cell's cube changes; its six neighbors are only read (on a chunk border, through the world),
-	 * so the neighbor chunks must already be filled. Much cheaper than Rebuild(), which looks at every cell.
-	 * Does nothing if the cell already shows the right type, which is the usual case for a neighbor.
+	 * Fixes one cell after mining or placing.
+	 * Compares what should be drawn with what is drawn.
+	 * Changes the cube only if they differ.
 	 */
 	void RedrawBlock(const FIntVector& Local);
 
 private:
-	/** The block type to draw in this cell, or Air if nothing is drawn (the cell is Air or buried). */
+	/** The block type to draw in this cell, or air if nothing is drawn (the cell is air or buried). */
 	FBlockId GetVisibleBlock(const AVoxelChunk& Chunk, const FIntVector& Local) const;
 
-	/** The block type whose mesh has a cube in this cell right now, or Air if none has. */
+	/** Gives the type that has a cube in a cell right now, or air if no mesh has one there. */
 	FBlockId FindDrawnBlock(const FIntVector& Local) const;
 
-	/** True if a face of this block can be seen, i.e. at least one neighbor is not solid. */
+	/** Is true if at least one of the cell's 6 neighbors is not solid, so you can see a face. */
 	bool IsExposed(const AVoxelChunk& Chunk, const FIntVector& Local) const;
 
-	/** True if the cell at this local coordinate hides the face next to it. May lie in a neighbor chunk. */
+	/** True if the cell at this local coordinate hides the face next to it. (may lie in a neighbor chunk) */
 	bool IsSolidNeighbor(const AVoxelChunk& Chunk, const FIntVector& Local) const;
 
-	/** The owning chunk, or null (with an ensure) if the owner is not an AVoxelChunk connected to its world. */
+	/** The owning chunk, or null if the owner is not an AVoxelChunk connected to its world. */
 	const AVoxelChunk* FindInitializedChunk() const;
 
-	/** Returns the cubes of a block type, creating them on first use. Null if the id is not in the catalog. */
+	/** Gives the mesh for a block type and creates it on first use. Gives null if the type isn't in the catalog. */
 	UBlockInstancesComponent* FindOrCreateMesh(const AVoxelWorld& World, FBlockId Id);
 
 	/** One mesh per block type present in the chunk. Key is an FBlockId (UHT needs the raw uint8). */

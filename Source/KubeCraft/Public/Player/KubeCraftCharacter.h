@@ -13,12 +13,8 @@ class UPlacingComponent;
 struct FInputActionValue;
 
 /**
- * First-person player: a capsule sized to fit through 1x2 block gaps, a camera at eye height,
- * and Enhanced Input bindings for walking, looking, jumping and mining.
- * Mining and placing are done by two components that share one aim component (ULookTargetComponent).
- * The character passes the mine button on; the place button is handled by the Blueprint subclass
- * (BP_KubeCraftCharacter), because it first asks the Blueprint inventory which block to place.
- * Input assets are assigned in that Blueprint subclass.
+ * AKubeCraftCharacter is the first-person player.
+ * It sets up the body, then passes on buttons.
  */
 UCLASS()
 class KUBECRAFT_API AKubeCraftCharacter : public ACharacter
@@ -30,16 +26,17 @@ public:
 	AKubeCraftCharacter();
 
 protected:
-	/** Makes the character tick after its mining component, so the Blueprint visuals read up-to-date progress. */
+	/** Ticks after mining, so the cracks show this frame's progress. */
 	virtual void BeginPlay() override;
 
 	/**
-	 * Moves the input mapping context from the previous player (if any) to the one now controlling this pawn,
-	 * and stops mining, because the old player's button release can no longer arrive.
+	 * Runs on the first possession, that's when the player gets their keys
 	 */
 	virtual void NotifyControllerChanged() override;
 
-	/** Binds Move, Look and Jump to this character, and Mine to its mining component. */
+	/** Binds Move, Look and Jump to this character, and Mine to its mining component. (Place is handled by the Blueprint)
+	 * TODO: fix?
+	 **/
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 private:
@@ -49,19 +46,19 @@ private:
 	/** Turns the view (2D input: X = yaw, Y = pitch). */
 	void Look(const FInputActionValue& Value);
 
-	/** First-person view at eye height; it turns with the controller (mouse). */
+	/** First-person view at eye height; it turns with the mouse. */
 	UPROPERTY(VisibleAnywhere, Category = "KubeCraft|Camera")
 	TObjectPtr<UCameraComponent> Camera;
 
-	/** Which block is in the middle of the screen; shared by mining and placing. Readable in Blueprints for visual feedback. */
+	/** Finds the block in the middle of the screen; mining and placing use it. Blueprints read it for the outline. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "KubeCraft|Blocks", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<ULookTargetComponent> LookTargetComponent;
 
-	/** Hold-to-mine timer for the targeted block. Readable in Blueprints for visual feedback and the inventory. */
+	/** The hold-to-mine timer for the targeted block. Blueprints read it for the cracks and the inventory. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "KubeCraft|Blocks", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UMiningComponent> MiningComponent;
 
-	/** Places a block against the face the player looks at. Called from the Blueprint's place input. */
+	/** Places a block against the face you look at. Blueprint's place input calls it. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "KubeCraft|Blocks", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPlacingComponent> PlacingComponent;
 

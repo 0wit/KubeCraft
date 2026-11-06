@@ -23,7 +23,7 @@ struct FBlockHeightBand
 };
 
 /**
- * All block types of the game and the height rule, edited as one data asset (DA_BlockCatalog).
+ * All block types in the game and the height rule, edited as one data asset (DA_BlockCatalog).
  *
  *   Blocks:       [DA_Block_Stone, DA_Block_Grass, DA_Block_Snow, DA_Block_Bedrock]
  *                    id 1            id 2            id 3          id 4             (id 0 = Air)
@@ -38,13 +38,14 @@ class KUBECRAFT_API UBlockCatalog : public UPrimaryDataAsset
 	GENERATED_BODY()
 
 public:
-	/** Definition for an id, or nullptr for Air and unknown ids. */
+	/** Gives you the block asset for an id. Id 0 (Air) or an unknown id gives nullptr. */
 	const UBlockDefinition* GetDefinition(FBlockId Id) const;
 
-	/** Id of a definition listed in Blocks, or AirBlockId if it isn't listed. */
+	/** Does the reverse: it gives you the id for a block asset. Block that isn't in the list gives 0 (air). */
 	FBlockId GetId(const UBlockDefinition* Definition) const;
 
-	/** Id of the block that belongs at block height Z according to HeightBands. */
+	/** Tells the terrain generator which block goes at height Z, using the height bands.
+	 * Above the last band it keeps using the last band's block. */
 	FBlockId GetIdForHeight(int32 Z) const;
 
 #if WITH_EDITOR

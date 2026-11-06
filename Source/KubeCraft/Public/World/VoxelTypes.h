@@ -4,14 +4,15 @@
 
 /**
  * What a chunk stores for each cube: one byte saying which block type is there.
- * 0 means Air (empty); any other value is a position in the block catalog (see UBlockCatalog).
+ * 0 means air (empty); any other value is a position in the block catalog.
  */
 using FBlockId = uint8;
 
-/** The id of an empty cell: never drawn, never collides, not listed in the catalog. */
+/** The id of an empty cell: never drawn, never collides, not in the catalog. */
 inline constexpr FBlockId AirBlockId = 0;
 
 /** Highest id a block type can have, so the catalog supports at most this many block types. */
+// like it would be possible to run out lol
 inline constexpr int32 MaxBlockId = TNumericLimits<FBlockId>::Max();
 
 /**
@@ -45,9 +46,12 @@ namespace KubeCraft::Voxel
 
 	/** Steps from a block to the six blocks that touch its faces: +X, -X, +Y, -Y, +Z, -Z. */
 	inline const FIntVector FaceNeighborOffsets[] = {
-		FIntVector(1, 0, 0), FIntVector(-1, 0, 0),
-		FIntVector(0, 1, 0), FIntVector(0, -1, 0),
-		FIntVector(0, 0, 1), FIntVector(0, 0, -1),
+		FIntVector(1, 0, 0),
+		FIntVector(-1, 0, 0),
+		FIntVector(0, 1, 0),
+		FIntVector(0, -1, 0),
+		FIntVector(0, 0, 1),
+		FIntVector(0, 0, -1),
 	};
 
 	/**
@@ -83,7 +87,7 @@ namespace KubeCraft::Voxel
 		return (FVector(Block) + FVector(0.5)) * BlockSize;
 	}
 
-	/** World position of the middle of a block's top face, e.g. where a player standing on it has their feet. */
+	/** World position of the middle of a block's top face, where a player standing on it has their feet. */
 	inline FVector BlockToWorldTopCenter(const FIntVector& Block)
 	{
 		return (FVector(Block) + FVector(0.5, 0.5, 1.0)) * BlockSize;
@@ -98,7 +102,7 @@ namespace KubeCraft::Voxel
 		return WorldToBlock(ImpactPoint - ImpactNormal * (0.5f * BlockSize));
 	}
 
-	/** Empty cell in front of the face a trace hit, i.e. where a block placed against that face goes. */
+	/** Empty cell in front of the face a trace hit, where a block placed against that face goes. */
 	inline FIntVector HitToFaceNeighbor(const FVector& ImpactPoint, const FVector& ImpactNormal)
 	{
 		return WorldToBlock(ImpactPoint + ImpactNormal * (0.5f * BlockSize));
@@ -134,9 +138,7 @@ namespace KubeCraft::Voxel
 	/** True if a local coordinate lies inside the chunk bounds. */
 	inline bool IsInsideChunk(const FIntVector& Local)
 	{
-		return Local.X >= 0 && Local.X < ChunkSize
-			&& Local.Y >= 0 && Local.Y < ChunkSize
-			&& Local.Z >= 0 && Local.Z < ChunkHeight;
+		return Local.X >= 0 && Local.X < ChunkSize && Local.Y >= 0 && Local.Y < ChunkSize && Local.Z >= 0 && Local.Z < ChunkHeight;
 	}
 
 	/**

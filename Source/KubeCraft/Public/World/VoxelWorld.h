@@ -22,13 +22,16 @@ struct FBlockChange
 	UPROPERTY(BlueprintReadOnly, Category = "KubeCraft|World")
 	FIntVector Block = FIntVector::ZeroValue;
 
-	/** The block type, or null for Air (a mined block). The type itself, not its id, so a reordered catalog still loads. */
+	/**
+	 * The block type, or null for air (mined block).
+	 * The type itself, not its id, a reordered catalog still loads.
+	 */
 	UPROPERTY(BlueprintReadOnly, Category = "KubeCraft|World")
 	TObjectPtr<const UBlockDefinition> Type = nullptr;
 };
 
 /**
- * Everything needed to build a voxel world again: the seed makes the same terrain, and the changes go on top.
+ * Everything needed to build a voxel world again: the seed makes the same terrain with the changes on top.
  * Made by AVoxelWorld::MakeSave, given back to AVoxelWorld::GenerateFromSave; a SaveGame Blueprint just stores it.
  */
 USTRUCT(BlueprintType)
@@ -46,14 +49,10 @@ struct FVoxelWorldSave
 };
 
 /**
- * The whole block world: owns the loaded chunks and answers questions about blocks in world block coordinates.
- * Its UChunkStreamingComponent decides which chunks are loaded and drawn; this actor only does what it is asked.
- * MineBlock() / PlaceBlock() are the only way blocks change; they ask FBlockRules first, and the changes are
- * remembered, so a chunk that is unloaded and loaded again still has them. MakeSave() hands out the seed and these
- * changes for a save game; GenerateFromSave() builds that world again.
- *
- * Chunks are placed in absolute world space (block (0, 0, 0) is always at the world origin),
- * so moving this actor in the level does not move the terrain.
+ * Actor that holds the whole block world.
+ * Keeps the loaded chunks.
+ * Answers "what block is at X?"
+ * The only place where blocks get changed.
  */
 UCLASS()
 class KUBECRAFT_API AVoxelWorld : public AActor
@@ -61,36 +60,39 @@ class KUBECRAFT_API AVoxelWorld : public AActor
 	GENERATED_BODY()
 
 public:
-	/** Creates the world actor with its streaming component; it has no visuals of its own. */
+	/** Creates the world actor with its streaming component; no visuals of its own. */
 	AVoxelWorld();
 
-	/** Picks the seed, then loads and draws the chunks around block (0, 0) at once. Call once, before the player is placed. */
+	/**
+	 * Picks the seed, then loads and draws the chunks around block (0, 0).
+	 * Called once, before the player is placed.
+	 */
 	void Generate();
 
 	/**
-	 * Makes Generate use this seed instead of a random one, e.g. one typed in for a new world.
-	 * Call before the world is built; afterwards the terrain is already made, so it is ignored (with a warning).
+	 * Makes Generate use this seed instead of a random one, one typed in for a new world.
+	 * Call before the world is built.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "KubeCraft|World")
 	void SetSeed(int32 NewSeed);
 
 	/**
 	 * Reads a seed the player typed in: a whole number that fits in an int32, spaces around it allowed.
-	 * Returns false for anything else ("", "12.5", "abc", "99999999999"), so the caller can pick a random seed instead.
+	 * Returns false for anything else, random seed is picked in that case.
 	 */
 	UFUNCTION(BlueprintPure, Category = "KubeCraft|World")
 	static bool TryParseSeed(const FString& Text, int32& OutSeed);
 
 	/**
-	 * Builds a saved world instead of a new one: its seed, its changes, and the chunks around the player's saved
-	 * location at once, so the player lands on ground. Call once instead of Generate, before the player is placed.
+	 * Builds a saved world instead of a new one: its seed, its changes, and the chunks around the player's saved location.
+	 * Called once instead of Generate, before the player is placed.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "KubeCraft|World")
 	void GenerateFromSave(const FVoxelWorldSave& Save, const FVector& PlayerLocation);
 
 	/**
-	 * The seed and every player change, for a SaveGame to store. Not pure: it copies every change,
-	 * so it should run once, when saving - a pure node would run again for every pin that reads it.
+	 * The seed and every player change to store in a SaveGame.
+	 * Not pure, copies every change.
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = "KubeCraft|World")
 	FVoxelWorldSave MakeSave() const;
@@ -98,46 +100,49 @@ public:
 	/** Block at a world block coordinate. Air where no chunk is loaded and above or below the world. */
 	FBlockId GetBlock(const FIntVector& Block) const;
 
-	/** Block type at a world block coordinate, or null for Air. */
+	/** Block type at a world block coordinate, or null for air. */
 	const UBlockDefinition* GetBlockDefinition(const FIntVector& Block) const;
 
-	/** World position (cm) on top of the highest solid block in a column, i.e. where a player can stand. */
+	/** World position on top of the highest solid block in a column, where a player can stand. */
 	FVector GetSurfaceLocation(const FIntPoint& Column) const;
 
-	/** True if the block lies between the floor and the ceiling of a loaded chunk, i.e. it can hold a block. */
+	/** True if the block lies between the floor and the ceiling of a loaded chunk. */
 	bool IsInsideWorld(const FIntVector& Block) const;
 
-	/** Removes a block if FBlockRules allows it and redraws what changed. Returns true if the block was removed. */
+	/**
+	 * Removes a block if FBlockRules allows it and redraws what changed.
+	 * Returns true if the block was removed.
+	 */
 	bool MineBlock(const FIntVector& Block);
 
 	/**
-	 * Puts a block of the given type here if FBlockRules allows it and redraws what changed.
-	 * Returns true if a block was placed; false also for a type that is null or not in the catalog.
+	 * Puts a block of the given type here if FBlockRules allows it, redraws what changed.
+	 * Returns true if a block was placed.
 	 */
 	bool PlaceBlock(const FIntVector& Block, const UBlockDefinition* Type);
 
 	/** All block types and the height rule; shared by every chunk. */
 	const UBlockCatalog* GetCatalog() const { return Catalog; }
 
-	/** Mesh drawn for every cube; shared by every chunk. */
+	/** Mesh drawn for every cube, shared by every chunk. */
 	UStaticMesh* GetBlockMesh() const { return BlockMesh; }
 
-	// Chunk loading - called by UChunkStreamingComponent, which decides which chunks should exist.
+	// Chunk loading called by UChunkStreamingComponent, which decides which chunks should exist.
 
 	/**
-	 * Creates a chunk and fills it: terrain from the seed, then the remembered player changes. Does not draw it,
-	 * because its border cubes need the neighbor chunks. Does nothing if it is already loaded or the world is not
-	 * built yet (by Generate or GenerateFromSave).
+	 * Spawns a chunk actor, fills it with terrain from the seed.
+	 * Puts the remembered player changes on top.
+	 * Doesn't draw it.
 	 */
 	void LoadChunk(const FIntPoint& ChunkCoord);
 
-	/** Draws a loaded chunk. Its four neighbors should be loaded first, or its border cubes are drawn as if facing Air. */
+	/** Draws a loaded chunk. Its four neighbors should be loaded first. */
 	void DrawChunk(const FIntPoint& ChunkCoord);
 
 	/** Destroys a chunk. Its player changes stay remembered for the next LoadChunk. */
 	void UnloadChunk(const FIntPoint& ChunkCoord);
 
-	/** True if the chunk is loaded (filled with blocks). */
+	/** True if the chunk is loaded. */
 	bool IsChunkLoaded(const FIntPoint& ChunkCoord) const { return FindChunk(ChunkCoord) != nullptr; }
 
 	/** True if the chunk is loaded and drawn. */
@@ -192,13 +197,13 @@ private:
 	UPROPERTY(EditAnywhere, Category = "KubeCraft|World")
 	TObjectPtr<UStaticMesh> BlockMesh;
 
-	/** Pick a new seed on every start. Turn off to always get the world of Seed. */
+	/** Pick a new seed on every start. */
 	UPROPERTY(EditAnywhere, Category = "KubeCraft|World")
 	bool bRandomSeed = true;
 
 	/**
-	 * Seed of the terrain. Overwritten on start when bRandomSeed is on, by SetSeed, and by a loaded save.
-	 * The seed in use is written to the log.
+	 * The number the terrain is made from: same seed, same terrain.
+	 * Overwritten on start when bRandomSeed is on, by SetSeed, and by a loaded save.
 	 */
 	UPROPERTY(EditAnywhere, Category = "KubeCraft|World", meta = (EditCondition = "!bRandomSeed"))
 	int32 Seed = 0;
@@ -208,8 +213,8 @@ private:
 	FTerrainSettings Terrain;
 
 	/**
-	 * Made once from Seed and Terrain when the world is built (PrepareTerrain), so every chunk gets the same land -
-	 * even if they are edited later. Set means the world is built.
+	 * The terrain maker, created once from Seed and Terrain..
+	 * It also works as a flag: set = the world is built.
 	 */
 	TOptional<FTerrainGenerator> Generator;
 

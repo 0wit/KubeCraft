@@ -34,15 +34,16 @@ class KUBECRAFT_API ULookTargetComponent : public UActorComponent
 
 public:
 	/**
-	 * Looks from the pawn's view point (the camera, for a player) up to Reach cm and returns the first block hit.
-	 * Empty if nothing is in reach, the first hit is not part of a voxel world, or the pawn has no controller.
+	 * Casts a line from the camera, up to Reach (5 blocks)
+	 * Returns block that was hit, empty if nothing is in reach.
 	 */
 	TOptional<FLookTarget> Trace() const;
 
 	/**
-	 * Blueprint version of Trace for visuals such as the block outline: the centre (cm) of the block the player
-	 * looks at. Returns false, and leaves BlockCenter unchanged, if no block is in reach.
-	 * Not pure, so a Blueprint runs the trace once per call instead of once per connected pin.
+	 * Blueprint version used for the block outline.
+	 * It runs Trace() once
+	 * Gives back true plus the block's centre in cm
+	 * Gives back false if no block is in reach.
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = "KubeCraft|Aim", meta = (ReturnDisplayName = "Found"))
 	bool FindLookedAtBlockCenter(FVector& BlockCenter) const;

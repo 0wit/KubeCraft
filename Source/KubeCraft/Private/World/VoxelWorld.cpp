@@ -36,7 +36,6 @@ void AVoxelWorld::Generate()
 
 void AVoxelWorld::SetSeed(int32 NewSeed)
 {
-	// The generator is made from the seed once; a later seed would not match the chunks already built.
 	if (Generator)
 	{
 		UE_LOG(LogKubeCraft, Warning, TEXT("%s: SetSeed after the world was built is ignored."), *GetName());
@@ -53,7 +52,7 @@ bool AVoxelWorld::TryParseSeed(const FString& Text, int32& OutSeed)
 	{
 		return false;
 	}
-	// Read as int64, so a number too big for a seed is seen as too big instead of wrapping around.
+	// Read as int64, a number too big for a seed is seen as too big instead of wrapping around.
 	TCHAR* End = nullptr;
 	const int64 Value = FCString::Strtoi64(*Trimmed, &End, 10);
 	// The whole text must be the number: "12.5" or "12abc" stop early.
@@ -75,15 +74,20 @@ void AVoxelWorld::GenerateFromSave(const FVoxelWorldSave& Save, const FVector& P
 	PrepareTerrain();
 	for (const FBlockChange& Change : Save.Changes)
 	{
-		// Air is a null type. A type that is not in the catalog (any more) has no id, so that change is left out.
+		// Air is a null type. A type that is not in the catalog has no id, so that change is left out.
 		const FBlockId Id = Catalog->GetId(Change.Type);
 		if (!IsInsideChunk(BlockToLocal(Change.Block)) || (Change.Type && Id == AirBlockId))
 		{
 			UE_LOG(LogKubeCraft, Warning, TEXT("%s: saved change at %s skipped: above or below the world, or %s is "
-				"not in the catalog."), *GetName(), *Change.Block.ToString(), *GetNameSafe(Change.Type));
+											   "not in the catalog."),
+				   *GetName(), *Change.Block.ToString(), *GetNameSafe(Change.Type));
 			continue;
 		}
-		// Like a change in the game, so one the terrain makes by itself anyway (e.g. after a terrain update) is dropped.
+		/**
+		 * Saved changes are loaded with the same rule as changes made during play, store only what's different.
+		 * If the terrain changed since saving, some saved changes may now match it, those are dropped.
+		 * The terrain already makes that block.
+		 */
 		RememberChange(Change.Block, Id);
 	}
 	GenerateAround(BlockToChunk(WorldToBlock(PlayerLocation)));
@@ -116,7 +120,7 @@ bool AVoxelWorld::CanGenerate() const
 	if (!Catalog || !BlockMesh)
 	{
 		UE_LOG(LogKubeCraft, Error, TEXT("%s: Catalog and BlockMesh must both be assigned; the world stays empty."),
-			*GetName());
+			   *GetName());
 		return false;
 	}
 	return true;
@@ -299,7 +303,8 @@ void AVoxelWorld::RememberChange(const FIntVector& Block, FBlockId Id)
 void AVoxelWorld::RedrawBlock(const FIntVector& Block)
 {
 	// Neighbors below the floor, above the ceiling or past the loaded chunks have nothing to draw.
-	// A loaded chunk that is not drawn yet is skipped too: it draws all its cubes once its neighbors are loaded.
+	// A loaded chunk that is not drawn yet is skipped too.
+	// It draws all its cubes once its neighbors are loaded.
 	AVoxelChunk* Chunk = FindChunk(BlockToChunk(Block));
 	const FIntVector Local = BlockToLocal(Block);
 	if (Chunk && Chunk->IsDrawn() && IsInsideChunk(Local))

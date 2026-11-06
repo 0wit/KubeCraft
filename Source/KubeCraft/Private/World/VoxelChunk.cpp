@@ -64,12 +64,12 @@ bool AVoxelChunk::SetBlock(const FIntVector& Local, FBlockId Id)
 void AVoxelChunk::SetAllBlocks(TArray<FBlockId>&& NewBlocks)
 {
 	if (!ensureMsgf(NewBlocks.Num() == BlocksPerChunk, TEXT("SetAllBlocks with %d blocks, expected %d"),
-		NewBlocks.Num(), BlocksPerChunk))
+					NewBlocks.Num(), BlocksPerChunk))
 	{
 		return;
 	}
 	// Same promise as SetBlock: every stored id must be drawable. A chunk holds only a few block types,
-	// so the catalog is asked once per type, not once per block.
+	// the catalog is asked once per type, not once per block.
 	bool bChecked[MaxBlockId + 1] = {};
 	for (const FBlockId Id : NewBlocks)
 	{

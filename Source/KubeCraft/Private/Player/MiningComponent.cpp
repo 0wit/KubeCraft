@@ -55,7 +55,7 @@ void UMiningComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 		MinedSeconds = 0.f;
 	}
 
-	// CanMine passed, so the block is not Air and has a definition. (The check above only decides whether
+	// CanMine passed, the block is not air and has a definition. (The check above only decides whether
 	// the timer runs; MineBlock asks the rules again itself.)
 	const UBlockDefinition* Type = Target->World->GetBlockDefinition(Target->Block);
 	MinedSeconds += DeltaTime;
@@ -73,7 +73,7 @@ void UMiningComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 bool UMiningComponent::GetMiningProgress(FVector& BlockCenter, float& Progress) const
 {
 	const AVoxelWorld* World = MinedWorld.Get();
-	// The definition can be missing if the block changed since the last tick (e.g. mined by someone else).
+	// The definition can be missing if the block changed since the last tick (maybe overkill for now)
 	const UBlockDefinition* Definition = World ? World->GetBlockDefinition(MinedBlock) : nullptr;
 	if (!Definition)
 	{

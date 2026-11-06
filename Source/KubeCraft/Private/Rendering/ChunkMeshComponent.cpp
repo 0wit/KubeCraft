@@ -58,7 +58,7 @@ void UChunkMeshComponent::Rebuild()
 
 void UChunkMeshComponent::RedrawBlock(const FIntVector& Local)
 {
-	// Mining and placing call this seven times per changed block, so its cost decides whether that hitches.
+	// Mining and placing call this seven times per changed block, its cost decides whether that hitches.
 	SCOPE_CYCLE_COUNTER(STAT_BlockRedraw);
 
 	const AVoxelChunk* Chunk = FindInitializedChunk();
@@ -122,13 +122,13 @@ bool UChunkMeshComponent::IsExposed(const AVoxelChunk& Chunk, const FIntVector& 
 
 bool UChunkMeshComponent::IsSolidNeighbor(const AVoxelChunk& Chunk, const FIntVector& Local) const
 {
-	// Nothing can be seen from below the world, so the bottom faces are never drawn.
+	// Nothing can be seen from below the world, the bottom faces are never drawn.
 	if (Local.Z < 0)
 	{
 		return true;
 	}
-	// Across a chunk border the chunk asks the world. A chunk that is not loaded counts as Air, which is why
-	// the streaming loads all four neighbors before it draws a chunk.
+	// Across a chunk border the chunk asks the world. A chunk that is not loaded counts as air.
+	// the streaming loads all four neighbors before it draws a chunk to prevent that.
 	return Chunk.GetBlockOrNeighbor(Local) != AirBlockId;
 }
 
@@ -155,7 +155,7 @@ UBlockInstancesComponent* UChunkMeshComponent::FindOrCreateMesh(const AVoxelWorl
 	const UBlockDefinition* Definition = Catalog ? Catalog->GetDefinition(Id) : nullptr;
 	UStaticMesh* BlockMesh = World.GetBlockMesh();
 	if (!ensureMsgf(Definition && BlockMesh, TEXT("%s: cannot draw block id %d (not in the catalog, or no block mesh)"),
-		*GetName(), Id))
+					*GetName(), Id))
 	{
 		return nullptr;
 	}

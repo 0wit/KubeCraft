@@ -22,7 +22,7 @@ public:
 	/** Turns on swap-removal (see RemoveBlock), which the cell record relies on. */
 	UBlockInstancesComponent();
 
-	/** Replaces all cubes with one cube per given cell, in a single update. Cells must not repeat. */
+	/** Clears everything and adds all cubes in one fast call. Used to draw a whole chunk.. */
 	void SetBlocks(const TArray<FIntVector>& Cells);
 
 	/** Adds a cube in this cell. Does nothing if there already is one. */
@@ -31,13 +31,12 @@ public:
 	/** Removes the cube in this cell. Does nothing if there is none. */
 	void RemoveBlock(const FIntVector& Cell);
 
-	/** True if this component draws a cube in this cell, e.g. to find which type a cell shows now. */
+	/** Is there a cube in this cell? */
 	bool HasBlock(const FIntVector& Cell) const { return InstancePerCell.Contains(Cell); }
 
 private:
 	/**
-	 * True if the record has one cell per instance. False (with an ensure) if cubes were added or removed
-	 * past this class, e.g. with AddInstance or ClearInstances called directly.
+	 * Checks that the record and the cubes still agree. (engine's instance list may have been changed by something else (a blueprint?)
 	 */
 	bool CheckRecordMatchesInstances() const;
 

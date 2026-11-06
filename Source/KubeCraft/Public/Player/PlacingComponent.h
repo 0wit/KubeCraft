@@ -8,9 +8,7 @@ class UBlockDefinition;
 class ULookTargetComponent;
 
 /**
- * Placing for the pawn it is attached to: puts a block of a given type against the face the player looks at
- * (the target comes from the owner's ULookTargetComponent). The world decides whether that is allowed.
- * Which type to place, and whether the player has one, is decided by the caller (the inventory in Blueprint).
+ * Puts a block where the player is looking.
  */
 UCLASS(ClassGroup = (KubeCraft), meta = (BlueprintSpawnableComponent))
 class KUBECRAFT_API UPlacingComponent : public UActorComponent
@@ -19,9 +17,8 @@ class KUBECRAFT_API UPlacingComponent : public UActorComponent
 
 public:
 	/**
-	 * Places one block of this type in the empty cell in front of the targeted face.
-	 * Returns false if Type is null (empty slot), nothing is in reach or the world refused it,
-	 * so the caller only uses up a block on success.
+	 * Places one block of this type in the empty cell the player is looking it.
+	 * The world may refuse it (e.g. if the cell is not empty), the player only uses up a block on success.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "KubeCraft|Placing", meta = (ReturnDisplayName = "Placed"))
 	bool Place(const UBlockDefinition* Type);

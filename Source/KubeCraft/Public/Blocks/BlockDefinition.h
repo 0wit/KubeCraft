@@ -8,7 +8,7 @@ class UMaterialInterface;
 class UTexture2D;
 
 /**
- * One block type (stone, grass, snow, ...) as a data asset, e.g. DA_Block_Stone.
+ * One block type as a data asset, e.g. DA_Block_Stone.
  * Adding a new block type needs no code: create a new asset of this class and add it
  * to the block catalog (DA_BlockCatalog).
  */
@@ -23,8 +23,8 @@ public:
 	TObjectPtr<UMaterialInterface> Material = nullptr;
 
 	/**
-	 * Picture of this block type, shown in the hotbar. Meant to be the same texture the block's material shows,
-	 * so the hotbar and the world always match (the block materials don't use it yet; they use a plain colour).
+	 * Picture of this block type, shown in the hotbar inventory. Meant to be the same texture the block's material shows,
+	 * so the inventory and the world always match (the block materials use plain color for now).
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "KubeCraft|Block")
 	TObjectPtr<UTexture2D> Texture = nullptr;
@@ -33,7 +33,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "KubeCraft|Block", meta = (ClampMin = "0.05", Units = "s"))
 	float MineTime = 1.f;
 
-	/** False for blocks the player can never remove, such as the bedrock that forms the floor of the world. */
+	/** False for blocks the player can never remove. (bedrock only for now) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "KubeCraft|Block")
 	bool bBreakable = true;
 };

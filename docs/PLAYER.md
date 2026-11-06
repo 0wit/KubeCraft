@@ -28,14 +28,25 @@ Press right mouse   the selected block is put on the face you look at
 
 ## Inventory (Blueprint)
 
-8 slots. A slot holds a block and a count.
+8 slots. A slot holds one block type and a count, at most `MaxStackSize` (128).
 
 ```
 [Stone 5][Grass 2][   ][   ] … [   ]
             ▲ selected
 ```
 
-- Mined block → the slot with the same block gets +1, or else the first empty slot.
+A mined block goes to the first slot that fits (`FindSlotFor`):
+
+| Order | Slot                                          |
+| ----- | --------------------------------------------- |
+| 1     | The selected slot, if same block and not full |
+| 2     | Any slot with the same block, not full        |
+| 3     | The selected slot, if empty                   |
+| 4     | The first empty slot                          |
+| –     | None fits: the block is lost                  |
+
+Example: Grass is selected. Mining Grass gives `Grass 3`; mining Stone goes to the first empty slot.
+
 - Placed block → the selected slot gets −1. At 0 it is empty.
 - Keys 1–8 and the mouse wheel choose the slot.
 - After every change the HUD redraws.
