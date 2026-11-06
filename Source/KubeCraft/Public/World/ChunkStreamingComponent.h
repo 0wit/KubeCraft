@@ -23,7 +23,7 @@ public:
 	/** Takes the view distance and chunks per frame from the player's settings, and again whenever they are applied. */
 	virtual void BeginPlay() override;
 
-	/** Stops listening to the player's settings. */
+	/** Stops listening to the player's settings. (OnApplied) */
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	/**

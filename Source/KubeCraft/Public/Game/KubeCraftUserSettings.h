@@ -5,8 +5,8 @@
 #include "KubeCraftUserSettings.generated.h"
 
 /**
- * Engine's settings class, plus two game settings.
- * View distance (2–12 chunks, default 4) and chunks per frame (1–8, default 2).
+ * Engine's settings class, plus three game settings.
+ * View distance (2–12 chunks, default 4), chunks per frame (1–8, default 2) and the language (default English).
  * Everything is saved in GameUserSettings.ini.
  */
 UCLASS(BlueprintType, config = GameUserSettings, configdonotcheckdefaults)
@@ -34,7 +34,7 @@ public:
 
 	/** The game's settings object. */
 	UFUNCTION(BlueprintPure, Category = "KubeCraft|Settings")
-	static UKubeCraftUserSettings *GetKubeCraftUserSettings();
+	static UKubeCraftUserSettings* GetKubeCraftUserSettings();
 
 	/** How far the player sees, in chunks. */
 	UFUNCTION(BlueprintPure, Category = "KubeCraft|Settings")
@@ -54,8 +54,22 @@ public:
 
 	/** The ranges of both values, for the settings sliders. */
 	UFUNCTION(BlueprintPure, Category = "KubeCraft|Settings")
-	static void GetStreamingRanges(int32 &OutMinViewDistance, int32 &OutMaxViewDistance, int32 &OutMinChunksPerFrame,
-								   int32 &OutMaxChunksPerFrame);
+	static void GetStreamingRanges(int32& OutMinViewDistance, int32& OutMaxViewDistance, int32& OutMinChunksPerFrame,
+								   int32& OutMaxChunksPerFrame);
+
+	/** The chosen language as a culture code */
+	UFUNCTION(BlueprintPure, Category = "KubeCraft|Settings")
+	FString GetLanguage() const { return Language; }
+
+	/** Chooses the language. A code the game has no text for means English. Takes effect on ApplySettings. */
+	UFUNCTION(BlueprintCallable, Category = "KubeCraft|Settings")
+	void SetLanguage(const FString& Code);
+
+	/**
+	 * The languages for the settings row: their codes and their names, each in its own language.
+	 */
+	UFUNCTION(BlueprintPure, Category = "KubeCraft|Settings")
+	static void GetLanguages(TArray<FString>& OutCodes, TArray<FText>& OutNames);
 
 	/**
 	 * Resets everything to defaults, with the screen resolution set to the desktop size.
@@ -64,11 +78,19 @@ public:
 	 */
 	virtual void SetToDefaults() override;
 
+	/** Loads the settings, and the language the engine saved. */
+	virtual void LoadSettings(bool bForceReload = false) override;
+
 	/** Clamps values that were edited by hand in the .ini file. */
 	virtual void ValidateSettings() override;
 
-	/** Applies the settings, then fires OnApplied so the chunk streaming updates right away. */
+	/** Applies the settings (also the language), then fires OnApplied so the chunk streaming updates right away. */
 	virtual void ApplyNonResolutionSettings() override;
+
+#if WITH_EDITOR
+	/** Play in the editor starts in the editor's preview language; this switches it to the chosen one at each start. */
+	virtual void PostInitProperties() override;
+#endif
 
 private:
 	UPROPERTY(config)
@@ -76,4 +98,13 @@ private:
 
 	UPROPERTY(config)
 	int32 ChunksPerFrame = DefaultChunksPerFrame;
+
+	/**
+	 * Not a config property: it is kept in the engine's own key.
+	 * Engine reads that key at startup, before any game code runs.
+	 */
+	FString Language;
+
+	/** Switches the game text to the chosen language and saves it in the engine's key. */
+	void ApplyLanguage() const;
 };

@@ -1,0 +1,337 @@
+﻿# Game English translation.
+# Fill out your copyright notice in the Description page of Project Settings.
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: Game\n"
+"POT-Creation-Date: 2026-11-06 17:29\n"
+"PO-Revision-Date: 2026-11-06 17:29\n"
+"Language-Team: \n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. Key:	42EA16F446CD4362AE88B691AB2DC4B3
+#. SourceLocation:	/Game/KubeCraft/Input/IA_Pause.IA_Pause.ActionDescription
+#: /Game/KubeCraft/Input/IA_Pause.IA_Pause.ActionDescription
+msgctxt ",42EA16F446CD4362AE88B691AB2DC4B3"
+msgid "Open or close the pause menu"
+msgstr "Open or close the pause menu"
+
+#. Key:	383B78E34D4260A64B9E109D344B735E
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_LanguageSettings.WBP_LanguageSettings_C:WidgetTree.Selector_Language.Label
+#: /Game/KubeCraft/UI/WBP_LanguageSettings.WBP_LanguageSettings_C:WidgetTree.Selector_Language.Label
+msgctxt ",383B78E34D4260A64B9E109D344B735E"
+msgid "Language"
+msgstr "Language"
+
+#. Key:	1E14E2BA4913B9E20A254985B3A6C304
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.Button_BackFromLoad.Text
+#: /Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.Button_BackFromLoad.Text
+msgctxt ",1E14E2BA4913B9E20A254985B3A6C304"
+msgid "Back"
+msgstr "Back"
+
+#. Key:	C110E3A14EBE783CDAFD0D9E20FE37EB
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.Button_BackFromNew.Text
+#: /Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.Button_BackFromNew.Text
+msgctxt ",C110E3A14EBE783CDAFD0D9E20FE37EB"
+msgid "Back"
+msgstr "Back"
+
+#. Key:	375261D2469F5C0F1BD2CF9856379B16
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.Button_Create.Text
+#: /Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.Button_Create.Text
+msgctxt ",375261D2469F5C0F1BD2CF9856379B16"
+msgid "Create"
+msgstr "Create"
+
+#. Key:	A8F154084E61D6E65C46FEA135B8BE03
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.Button_LoadWorld.Text
+#: /Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.Button_LoadWorld.Text
+msgctxt ",A8F154084E61D6E65C46FEA135B8BE03"
+msgid "Load World"
+msgstr "Load World"
+
+#. Key:	9C85C1C74ECF1E1D09266C92E2C216CF
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.Button_NewWorld.Text
+#: /Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.Button_NewWorld.Text
+msgctxt ",9C85C1C74ECF1E1D09266C92E2C216CF"
+msgid "New World"
+msgstr "New World"
+
+#. Key:	DAD25FAC4403443D3E02C9AB1F497582
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.Button_Quit.Text
+#: /Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.Button_Quit.Text
+msgctxt ",DAD25FAC4403443D3E02C9AB1F497582"
+msgid "Quit"
+msgstr "Quit"
+
+#. Key:	78931BB44B6698627F73D5BBEAFD7467
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.Button_Settings.Text
+#: /Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.Button_Settings.Text
+msgctxt ",78931BB44B6698627F73D5BBEAFD7467"
+msgid "Settings"
+msgstr "Settings"
+
+#. Key:	SeedHint
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.Input_Seed.HintText
+#: /Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.Input_Seed.HintText
+msgctxt "MainMenu,SeedHint"
+msgid "Seed"
+msgstr "Seed"
+
+#. Key:	WorldNameHint
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.Input_WorldName.HintText
+#: /Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.Input_WorldName.HintText
+msgctxt "MainMenu,WorldNameHint"
+msgid "World name"
+msgstr "World name"
+
+#. Key:	1C68CC174976DB6D45473C9B2FC4B709
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.Text_NoWorlds.Text
+#: /Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.Text_NoWorlds.Text
+msgctxt ",1C68CC174976DB6D45473C9B2FC4B709"
+msgid "No saved worlds"
+msgstr "No saved worlds"
+
+#. Key:	4C3E7FCC48C0009147AD66A8B35C453A
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.TextBlock_71.Text
+#: /Game/KubeCraft/UI/WBP_MainMenu.WBP_MainMenu_C:WidgetTree.TextBlock_71.Text
+msgctxt ",4C3E7FCC48C0009147AD66A8B35C453A"
+msgid "Kubecraft"
+msgstr "Kubecraft"
+
+#. Key:	08F4B53E40900684331256976454BA54
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_PauseMenu.WBP_PauseMenu_C:WidgetTree.Button_QuitMenu.Text
+#: /Game/KubeCraft/UI/WBP_PauseMenu.WBP_PauseMenu_C:WidgetTree.Button_QuitMenu.Text
+msgctxt ",08F4B53E40900684331256976454BA54"
+msgid "Save & Quit"
+msgstr "Save & Quit"
+
+#. Key:	587374FA4B333EFFA28AFBB5E36C5014
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_PauseMenu.WBP_PauseMenu_C:WidgetTree.Button_Resume.Text
+#: /Game/KubeCraft/UI/WBP_PauseMenu.WBP_PauseMenu_C:WidgetTree.Button_Resume.Text
+msgctxt ",587374FA4B333EFFA28AFBB5E36C5014"
+msgid "Resume"
+msgstr "Resume"
+
+#. Key:	495821784B2CD6B389D80494BD9384DD
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_PauseMenu.WBP_PauseMenu_C:WidgetTree.Button_Save.Text
+#: /Game/KubeCraft/UI/WBP_PauseMenu.WBP_PauseMenu_C:WidgetTree.Button_Save.Text
+msgctxt ",495821784B2CD6B389D80494BD9384DD"
+msgid "Save"
+msgstr "Save"
+
+#. Key:	BA3FABC045E380CEA3887E92DED5E598
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_PauseMenu.WBP_PauseMenu_C:WidgetTree.Button_Settings.Text
+#: /Game/KubeCraft/UI/WBP_PauseMenu.WBP_PauseMenu_C:WidgetTree.Button_Settings.Text
+msgctxt ",BA3FABC045E380CEA3887E92DED5E598"
+msgid "Settings"
+msgstr "Settings"
+
+#. Key:	E6B50D7B47FB751F3BD30E87EC971D9E
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_PauseMenu.WBP_PauseMenu_C:WidgetTree.TextBlock_111.Text
+#: /Game/KubeCraft/UI/WBP_PauseMenu.WBP_PauseMenu_C:WidgetTree.TextBlock_111.Text
+msgctxt ",E6B50D7B47FB751F3BD30E87EC971D9E"
+msgid "Paused"
+msgstr "Paused"
+
+#. Key:	F8AA3F6D4621F522CA35699AC9026A51
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_PlayerHUD.WBP_PlayerHUD_C:WidgetTree.TextBlock_68.Text
+#: /Game/KubeCraft/UI/WBP_PlayerHUD.WBP_PlayerHUD_C:WidgetTree.TextBlock_68.Text
+msgctxt ",F8AA3F6D4621F522CA35699AC9026A51"
+msgid "+"
+msgstr "+"
+
+#. Key:	F344C92B419DCD0FF64E309E1C6D7289
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_Settings.WBP_Settings_C:WidgetTree.Button_Apply.Text
+#: /Game/KubeCraft/UI/WBP_Settings.WBP_Settings_C:WidgetTree.Button_Apply.Text
+msgctxt ",F344C92B419DCD0FF64E309E1C6D7289"
+msgid "Apply"
+msgstr "Apply"
+
+#. Key:	316AE33541401882874DB89F65437C52
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_Settings.WBP_Settings_C:WidgetTree.Button_Back.Text
+#: /Game/KubeCraft/UI/WBP_Settings.WBP_Settings_C:WidgetTree.Button_Back.Text
+msgctxt ",316AE33541401882874DB89F65437C52"
+msgid "Back"
+msgstr "Back"
+
+#. Key:	773E0BC94EA7DA385BEAE1954B80646F
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_Settings.WBP_Settings_C:WidgetTree.Button_Defaults.Text
+#: /Game/KubeCraft/UI/WBP_Settings.WBP_Settings_C:WidgetTree.Button_Defaults.Text
+msgctxt ",773E0BC94EA7DA385BEAE1954B80646F"
+msgid "Defaults"
+msgstr "Defaults"
+
+#. Key:	6B22D8664E6BBFD23443EC8FA0C3B04B
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_Settings.WBP_Settings_C:WidgetTree.Button_KeepVideo.Text
+#: /Game/KubeCraft/UI/WBP_Settings.WBP_Settings_C:WidgetTree.Button_KeepVideo.Text
+msgctxt ",6B22D8664E6BBFD23443EC8FA0C3B04B"
+msgid "Keep"
+msgstr "Keep"
+
+#. Key:	8B7750294E7E1EA880768FA33F4FE22E
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_Settings.WBP_Settings_C:WidgetTree.Button_RevertVideo.Text
+#: /Game/KubeCraft/UI/WBP_Settings.WBP_Settings_C:WidgetTree.Button_RevertVideo.Text
+msgctxt ",8B7750294E7E1EA880768FA33F4FE22E"
+msgid "Revert"
+msgstr "Revert"
+
+#. Key:	39E23CDC4D341E3E57ADE695916336BC
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_Settings.WBP_Settings_C:WidgetTree.Button_TabAccessibility.Text
+#: /Game/KubeCraft/UI/WBP_Settings.WBP_Settings_C:WidgetTree.Button_TabAccessibility.Text
+msgctxt ",39E23CDC4D341E3E57ADE695916336BC"
+msgid "Accessibility"
+msgstr "Accessibility"
+
+#. Key:	FEC1451642799ED09FDB17A2D30ED03C
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_Settings.WBP_Settings_C:WidgetTree.Button_TabLanguage.Text
+#: /Game/KubeCraft/UI/WBP_Settings.WBP_Settings_C:WidgetTree.Button_TabLanguage.Text
+msgctxt ",FEC1451642799ED09FDB17A2D30ED03C"
+msgid "Language"
+msgstr "Language"
+
+#. Key:	9B71E6FD404D1DF6EC0018B48BAE001A
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_Settings.WBP_Settings_C:WidgetTree.Button_TabVideo.Text
+#: /Game/KubeCraft/UI/WBP_Settings.WBP_Settings_C:WidgetTree.Button_TabVideo.Text
+msgctxt ",9B71E6FD404D1DF6EC0018B48BAE001A"
+msgid "Video"
+msgstr "Video"
+
+#. Key:	9AC8658C44FB528F9D547AAB1077D9CB
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_Settings.WBP_Settings_C:WidgetTree.TextBlock_90.Text
+#: /Game/KubeCraft/UI/WBP_Settings.WBP_Settings_C:WidgetTree.TextBlock_90.Text
+msgctxt ",9AC8658C44FB528F9D547AAB1077D9CB"
+msgid "Keep displaying these settings?"
+msgstr "Keep displaying these settings?"
+
+#. Key:	51179E054A3F080A277A339BAA8548D1
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_SettingSelector.WBP_SettingSelector_C:WidgetTree.TextBlock_288.Text
+#: /Game/KubeCraft/UI/WBP_SettingSelector.WBP_SettingSelector_C:WidgetTree.TextBlock_288.Text
+msgctxt ",51179E054A3F080A277A339BAA8548D1"
+msgid "<"
+msgstr "<"
+
+#. Key:	8A3A307541741BE000BBFFB6F5742384
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_SettingSelector.WBP_SettingSelector_C:WidgetTree.TextBlock_354.Text
+#: /Game/KubeCraft/UI/WBP_SettingSelector.WBP_SettingSelector_C:WidgetTree.TextBlock_354.Text
+msgctxt ",8A3A307541741BE000BBFFB6F5742384"
+msgid ">"
+msgstr ">"
+
+#. Key:	F67E2816416B722196E15F9082C2EF0C
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Selector_Quality.Label
+#: /Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Selector_Quality.Label
+msgctxt ",F67E2816416B722196E15F9082C2EF0C"
+msgid "Quality"
+msgstr "Quality"
+
+#. Key:	9B66FB73430BCB64592338848E68648D
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Selector_Quality.Options(0).Options
+#: /Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Selector_Quality.Options(0).Options
+msgctxt ",9B66FB73430BCB64592338848E68648D"
+msgid "Low"
+msgstr "Low"
+
+#. Key:	7739E5D946592DB98C47818F737C67A4
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Selector_Quality.Options(1).Options
+#: /Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Selector_Quality.Options(1).Options
+msgctxt ",7739E5D946592DB98C47818F737C67A4"
+msgid "Medium"
+msgstr "Medium"
+
+#. Key:	49B6416F4204C20F1DB4F4B59CFAF408
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Selector_Quality.Options(2).Options
+#: /Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Selector_Quality.Options(2).Options
+msgctxt ",49B6416F4204C20F1DB4F4B59CFAF408"
+msgid "High"
+msgstr "High"
+
+#. Key:	D447CC59448C839A4738FEB6B284128B
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Selector_Quality.Options(3).Options
+#: /Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Selector_Quality.Options(3).Options
+msgctxt ",D447CC59448C839A4738FEB6B284128B"
+msgid "Epic"
+msgstr "Epic"
+
+#. Key:	1E928E5647BC5F5B5E3725B9BE053342
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Selector_Resolution.Label
+#: /Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Selector_Resolution.Label
+msgctxt ",1E928E5647BC5F5B5E3725B9BE053342"
+msgid "Resolution"
+msgstr "Resolution"
+
+#. Key:	C7A8C2B84437A2D31A0ADEB332313B45
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Selector_WindowMode.Label
+#: /Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Selector_WindowMode.Label
+msgctxt ",C7A8C2B84437A2D31A0ADEB332313B45"
+msgid "Window mode"
+msgstr "Window mode"
+
+#. Key:	F209F7404458BB1967E9DD93D419B688
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Selector_WindowMode.Options(0).Options
+#: /Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Selector_WindowMode.Options(0).Options
+msgctxt ",F209F7404458BB1967E9DD93D419B688"
+msgid "Fullscreen"
+msgstr "Fullscreen"
+
+#. Key:	486C27CB4691C12D43B4FE862D6A65F5
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Selector_WindowMode.Options(1).Options
+#: /Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Selector_WindowMode.Options(1).Options
+msgctxt ",486C27CB4691C12D43B4FE862D6A65F5"
+msgid "Windowed fullscreen"
+msgstr "Windowed fullscreen"
+
+#. Key:	3BCB956048841556ADDCC29EC4F036AC
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Selector_WindowMode.Options(2).Options
+#: /Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Selector_WindowMode.Options(2).Options
+msgctxt ",3BCB956048841556ADDCC29EC4F036AC"
+msgid "Windowed"
+msgstr "Windowed"
+
+#. Key:	C5AF68CA4AFD848BB2E54CAE433B834A
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Slider_ChunksPerFrame.Label
+#: /Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Slider_ChunksPerFrame.Label
+msgctxt ",C5AF68CA4AFD848BB2E54CAE433B834A"
+msgid "Chunks per frame"
+msgstr "Chunks per frame"
+
+#. Key:	E0FDEA46497015A9EFC8B0968639758E
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Slider_ViewDistance.Label
+#: /Game/KubeCraft/UI/WBP_VideoSettings.WBP_VideoSettings_C:WidgetTree.Slider_ViewDistance.Label
+msgctxt ",E0FDEA46497015A9EFC8B0968639758E"
+msgid "View distance (chunks)"
+msgstr "View distance (chunks)"
+
+#. Key:	915A74684A8F59D3A2466BAD593B8A3F
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_WorldEntry.WBP_WorldEntry_C:ExecuteUbergraph_WBP_WorldEntry [Script Bytecode]
+#: /Game/KubeCraft/UI/WBP_WorldEntry.WBP_WorldEntry_C:ExecuteUbergraph_WBP_WorldEntry [Script Bytecode]
+msgctxt ",915A74684A8F59D3A2466BAD593B8A3F"
+msgid "Can't be loaded"
+msgstr "Can't be loaded"
+
+#. Key:	A36064FD4FD011FD78D1139499013C25
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_WorldEntry.WBP_WorldEntry_C:ExecuteUbergraph_WBP_WorldEntry [Script Bytecode]
+#: /Game/KubeCraft/UI/WBP_WorldEntry.WBP_WorldEntry_C:ExecuteUbergraph_WBP_WorldEntry [Script Bytecode]
+msgctxt ",A36064FD4FD011FD78D1139499013C25"
+msgid "Seed {Seed}  |  {SavedAt}"
+msgstr "Seed {Seed}  |  {SavedAt}"
+
+#. Key:	AD1BB6B34F327017371174AC9757780C
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_WorldEntry.WBP_WorldEntry_C:WidgetTree.Text.Text
+#: /Game/KubeCraft/UI/WBP_WorldEntry.WBP_WorldEntry_C:WidgetTree.Text.Text
+msgctxt ",AD1BB6B34F327017371174AC9757780C"
+msgid "Delete"
+msgstr "Delete"
+
+#. Key:	BABBCDD447EB5EE13AE4B8B9E6C20D9C
+#. SourceLocation:	/Game/KubeCraft/UI/WBP_WorldEntry.WBP_WorldEntry_C:WidgetTree.TextBlock_227.Text
+#: /Game/KubeCraft/UI/WBP_WorldEntry.WBP_WorldEntry_C:WidgetTree.TextBlock_227.Text
+msgctxt ",BABBCDD447EB5EE13AE4B8B9E6C20D9C"
+msgid "Load"
+msgstr "Load"
+

@@ -22,7 +22,7 @@ struct FTerrainSettings
 
 	/** How far hills can rise above and valleys sink below BaseHeight, in blocks. */
 	UPROPERTY(EditAnywhere, Category = "KubeCraft|Terrain", meta = (ClampMin = "0"))
-	float HeightVariation = 24.f;
+	float HeightVariation = 32.f;
 
 	/** Width of the biggest hills in blocks (one wave of the first layer). Bigger = gentler land. */
 	UPROPERTY(EditAnywhere, Category = "KubeCraft|Terrain", meta = (ClampMin = "1"))

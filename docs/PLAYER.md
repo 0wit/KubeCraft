@@ -19,12 +19,12 @@ Press right mouse   the selected block is put on the face you look at
 
 ### Rules
 
-| Rule                                | Why                    |
-| ----------------------------------- | ---------------------- |
-| Bedrock can't be mined              | The floor of the world |
-| No placing at height 64 or more     | The ceiling            |
-| No placing outside loaded chunks    | There is nothing there |
-| No placing where a player stands    | You'd be stuck         |
+| Rule                             | Why                    |
+| -------------------------------- | ---------------------- |
+| Bedrock can't be mined           | The floor of the world |
+| No placing at height 64 or more  | The ceiling            |
+| No placing outside loaded chunks | There is nothing there |
+| No placing where a player stands | You'd be stuck         |
 
 ## Inventory (Blueprint)
 
@@ -62,7 +62,7 @@ Example: Grass is selected. Mining Grass gives `Grass 3`; mining Stone goes to t
 `WBP_PlayerHUD`
 
 - A "+" in the middle of the screen. (crosshair)
-- The row of slots at the bottom.
+- The row of inventory slots at the bottom.
 - Each slot shows the block's picture (`T_Block_*`), the count, and a white frame if it is selected.
 
 [↑ Contents](#contents) · [Overview](ARCHITECTURE.md#contents)

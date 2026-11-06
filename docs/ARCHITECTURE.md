@@ -57,8 +57,8 @@ Game mode ──1. build──▶ World ──▶ Chunk, Chunk, Chunk ...   (onl
 |                                                      | `ULookTargetComponent`     | Which cube am I looking at?                                                                         | [Player → Mining and placing](PLAYER.md#mining-and-placing) |
 |                                                      | `UMiningComponent`         | Mines cube after its mining time                                                                    | [Player → Mining and placing](PLAYER.md#mining-and-placing) |
 |                                                      | `UPlacingComponent`        | Places cube on the face you look at                                                                 | [Player → Mining and placing](PLAYER.md#mining-and-placing) |
-| `Game/` – start order of a game                      | `AKubeCraftGameMode`       | Builds the world and puts the player on it. Blueprint can build a saved world instead               | [Starting a game](#starting-a-game)                         |
-|                                                      | `UKubeCraftUserSettings`   | The player's settings: engine ones + view distance and chunks per frame, kept in their range        | [Menus → Settings](MENUS.md#settings)                       |
+| `Game/` – start order of a game                      | `AKubeCraftGameMode`       | Builds the world,puts the player on it. Blueprint builds a saved world instead                      | [Starting a game](#starting-a-game)                         |
+|                                                      | `UKubeCraftUserSettings`   | The player's settings, graphcis + view distance, chunks per frame and language                      | [Menus → Settings](MENUS.md#settings)                       |
 
 ## Blueprints
 
@@ -74,19 +74,19 @@ Game mode ──1. build──▶ World ──▶ Chunk, Chunk, Chunk ...   (onl
 | `T_Block_*`                | Picture of each block type                                       | [Player → HUD](PLAYER.md#hud)                                                |
 | `BP_KubeCraftGameInstance` | Remembers which world is played. Creates, loads, saves worlds    | [Menus → From menu to world](MENUS.md#from-menu-to-world)                    |
 | `BP_KubeCraftGameMode`     | Builds a new or a saved world (Start World)                      | [Menus → Starting the world](MENUS.md#starting-the-world)                    |
-| `BP_MainMenuGameMode`      | Menu level: no player, shows the main menu                       | [Menus → Main menu](MENUS.md#main-menu)                                      |
+| `BP_MainMenuGameMode`      | Menu level: no player, shows the main menu                       | [Menus → From menu to world](MENUS.md#from-menu-to-world)                    |
 | `BP_WorldSave` + list      | One saved world, and which worlds are saved                      | [Menus → Saving](MENUS.md#saving)                                            |
-| `WBP_MainMenu` + parts     | Main menu, saved-world rows, settings page, menu button          | [Menus → Main menu](MENUS.md#main-menu)                                      |
-| `WBP_Settings` + parts     | Settings page, Video tab, slider and selector rows               | [Menus → Settings](MENUS.md#settings)                                        |
+| `WBP_MainMenu` + parts     | Main menu, saved-world rows, settings page, menu button          | [Menus → From menu to world](MENUS.md#from-menu-to-world)                    |
+| `WBP_Settings` + parts     | Settings page, Video and Language tabs, slider and selector rows | [Menus → Settings](MENUS.md#settings)                                        |
 | `WBP_PauseMenu`            | Esc menu: Resume, Save, Settings, Save & Quit                    | [Menus → Pause menu](MENUS.md#pause-menu)                                    |
 
 ## Starting a game
 
-1. The game starts in `L_MainMenu`, which shows the main menu.
+1. `L_MainMenu` is opened.
    Create or Load tells the game instance which world to play, then opens `L_World`.
-2. The game mode builds the world: a new one gets a random **seed** (or the typed-in one; shown in the Output Log),
+2. The game mode builds the world. New one gets a random **seed** (or the typed-in one),
    a saved one gets its seed and changes back. All chunks around the player load and draw at once.
-3. The game mode puts the player on the ground in the middle, or back where they saved.
+3. The game mode puts the player on the ground, or back where they saved.
 4. The character shows the HUD.
 5. While playing, the chunk streaming loads new chunks in front of the player and unloads the ones behind.
 
@@ -99,9 +99,11 @@ Source/KubeCraft/Public/   .h     Blocks/, World/, Rendering/, Terrain/, Player/
 Source/KubeCraft/Private/  .cpp   the same folders + Tests/
 Content/KubeCraft/         Blocks/, Blueprints/ (+ Components/, SaveGames/, Structures/, World/), Input/, Materials/,
                            Textures/, UI/, Maps/ (L_MainMenu, L_World)
+Content/Localization/Game/  the translations: one folder per language (cs/Game.po = the Czech text)
+Config/Localization/       the steps of the Localization Dashboard (Gather, Export, Import, Compile)
 SourceArt/Textures/        the PNG files the textures are imported from
-docs/                      ARCHITECTURE.md (this page), WORLD.md, PLAYER.md, MENUS.md
-Saved/SaveGames/           saved worlds (made while playing, not in git)
+docs/                      ARCHITECTURE.md, WORLD.md, PLAYER.md, MENUS.md
+Saved/SaveGames/           saved worlds
 ```
 
 ## How do I…
@@ -109,26 +111,24 @@ Saved/SaveGames/           saved worlds (made while playing, not in git)
 | I want to…                                | Do this                                                                                      |
 | ----------------------------------------- | -------------------------------------------------------------------------------------------- |
 | Add a block                               | Make a new block asset with a material and a picture. Add it to the end of `DA_BlockCatalog` |
-| Change a block's hotbar picture           | Draw a new `T_Block_*` (or set another texture in the block asset's `Texture`)               |
+| Change a block's inventory picture        | Draw a new `T_Block_*` (or set texture in the block asset's `Texture`)                       |
 | Change the number of slots                | `SlotCount` on `InventoryComponent` in `BP_KubeCraftCharacter`                               |
-| Change which key picks which slot         | `HotbarKeys` in `BP_KubeCraftCharacter` (key name → slot, 0 = first)                         |
+| Change which key picks which slot         | `HotbarKeys` in `BP_KubeCraftCharacter`                                                      |
 | Change mining time                        | `MineTime` in the block asset                                                                |
-| Make a block unbreakable                  | Turn off `bBreakable` in the block asset                                                     |
+| Make a block unbreakable                  | Turn off `bBreakable`                                                                        |
 | Change how far the player reaches         | `BP_KubeCraftCharacter` → LookTarget → Reach                                                 |
 | Change a mining/placing limit             | `Blocks/BlockRules.cpp`                                                                      |
 | Change player size / jump                 | Numbers at the top of `Player/KubeCraftCharacter.cpp`                                        |
 | Change the hills                          | `BP_VoxelWorld` → Terrain                                                                    |
-| Change how far the player sees            | Settings → Video → View distance (range: top of `Game/KubeCraftUserSettings.h`)              |
+| Change how far the player sees            | Settings → Video → View distance                                                             |
 | Change how fast new chunks appear         | Settings → Video → Chunks per frame (higher = faster, frames may take longer)                |
-| Add a row to the Video tab                | `WBP_VideoSettings`: add a slider/selector row, read it in LoadFromSettings, write in Apply  |
-| Get the same world again                  | Main menu → New World → type its seed (Load World shows the seed of each saved world)        |
-| Always get one world when playing L_World | `BP_VoxelWorld` → Seed, turn off `bRandomSeed`                                               |
-| Change keys                               | `IMC_Default` (Esc = `IA_Pause`)                                                             |
-| Test the pause menu in the editor         | Esc stops play mode: Editor Preferences → Keyboard Shortcuts → Stop → other key              |
-| Change a texture                          | Edit its PNG in `SourceArt/Textures/`, then right-click the texture → Reimport               |
-| Make the outline thicker / another colour | `M_BlockOutline`: lower the 0.48 in **Step** / change the colour node                        |
-| Change the cracks                         | Draw a new `T_Crack` (gray = when a pixel appears)                                           |
-| Change the crosshair or the hotbar look   | `WBP_PlayerHUD` (crosshair, position of the bar), `WBP_InventorySlot` (one slot)             |
+| Translate new or changed text             | Localization Dashboard → Game: Gather, Export, edit `cs/Game.po`, Import, Compile            |
+| Add a language                            | Localization Dashboard → Game: Add New Culture, then as above. Add it to `CulturesToStage`   |
+| Change keys                               | `IMC_Default`                                                                                |
+| Change a texture                          | Edit its PNG in `SourceArt/Textures/`, then Reimport                                         |
+| Make the outline thicker / another colour | `M_BlockOutline` change the colour node                                                      |
+| Change the cracks                         | Draw a new `T_Crack` (shade of gray = when a pixel appears)                                  |
+| Change the crosshair or the hotbar look   | `WBP_PlayerHUD`, `WBP_InventorySlot` (one slot)                                              |
 | See how long a redraw takes               | While playing, type `stat KubeCraft` in the console (`~`)                                    |
 | Run the tests                             | Tools → Session Frontend → Automation → `KubeCraft` → Start                                  |
 
@@ -139,20 +139,20 @@ Saved/SaveGames/           saved worlds (made while playing, not in git)
 - **Unit tests** check one piece alone, with no world.
 - **Integration tests** need real chunks. A small temporary world is built (`TestVoxelWorld.h`).
 
-| Test                                      | Tests code in              | Checks                                                                                                      |
-| ----------------------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `KubeCraft.World.Coordinates`             | `World/VoxelTypes.h`       | Position conversions, also negative ones. Which cube a hit means                                            |
-| `KubeCraft.World.ParseSeed`               | `World/VoxelWorld`         | Which typed-in text is a seed: `-42` yes; `12.5`, `abc` or a too big number no                              |
-| `KubeCraft.Blocks.HeightBands`            | `Blocks/BlockCatalog`      | Which block goes at which height                                                                            |
-| `KubeCraft.Terrain.Generator`             | `Terrain/TerrainGenerator` | Same seed → same hills. Other seed → other hills                                                            |
-| `KubeCraft.Terrain.TerrainBlock`          | `Terrain/TerrainGenerator` | The cube at one spot is the same as in the whole generated chunk                                            |
-| `KubeCraft.Integration.BlockRules`        | `Blocks/BlockRules`        | What may be mined, where a block may be placed                                                              |
-| `KubeCraft.Integration.MineAndPlace`      | `World/VoxelWorld`         | Mining and placing can change blocks. Placed type is the given type. A border change redraws the next chunk |
-| `KubeCraft.Integration.IncrementalRedraw` | `Rendering/`               | After many changes, only cubes that touch air are drawn, each with its right type                           |
-| `KubeCraft.Integration.ChunkStreaming`    | `World/ChunkStreaming…`    | Start draws the middle. Right chunks load, draw, unload. No walls. A few per call. Changes come back        |
-| `KubeCraft.Integration.StreamingSettings` | `Game/KubeCraftUserSettings` | Settings stay in range, defaults. A new view distance while playing draws the bigger circle               |
-| `KubeCraft.Integration.SaveLoad`          | `World/VoxelWorld`         | A save has the seed and all changes. A loaded world has them, drawn around the player. Unneeded ones go     |
-| `KubeCraft.Integration.CustomSeed`        | `World/VoxelWorld`         | A typed-in seed wins over the random one. After building, a new seed changes nothing                        |
+| Test                                      | Tests code in                | Checks                                                                                                      |
+| ----------------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `KubeCraft.World.Coordinates`             | `World/VoxelTypes.h`         | Position conversions, also negative ones. Which cube a hit means                                            |
+| `KubeCraft.World.ParseSeed`               | `World/VoxelWorld`           | Which typed-in text is a seed: `-42` yes; `12.5`, `abc` or a too big number no                              |
+| `KubeCraft.Blocks.HeightBands`            | `Blocks/BlockCatalog`        | Which block goes at which height                                                                            |
+| `KubeCraft.Terrain.Generator`             | `Terrain/TerrainGenerator`   | Same seed → same hills. Other seed → other hills                                                            |
+| `KubeCraft.Terrain.TerrainBlock`          | `Terrain/TerrainGenerator`   | The cube at one spot is the same as in the whole generated chunk                                            |
+| `KubeCraft.Integration.BlockRules`        | `Blocks/BlockRules`          | What may be mined, where a block may be placed                                                              |
+| `KubeCraft.Integration.MineAndPlace`      | `World/VoxelWorld`           | Mining and placing can change blocks. Placed type is the given type. A border change redraws the next chunk |
+| `KubeCraft.Integration.IncrementalRedraw` | `Rendering/`                 | After many changes, only cubes that touch air are drawn, each with its right type                           |
+| `KubeCraft.Integration.ChunkStreaming`    | `World/ChunkStreaming…`      | Start draws the middle. Right chunks load, draw, unload. No walls. A few per call. Changes come back        |
+| `KubeCraft.Integration.StreamingSettings` | `Game/KubeCraftUserSettings` | Settings stay in range, defaults. A new view distance while playing draws the bigger circle                 |
+| `KubeCraft.Integration.SaveLoad`          | `World/VoxelWorld`           | A save has the seed and all changes. A loaded world has them, drawn around the player. Unneeded ones go     |
+| `KubeCraft.Integration.CustomSeed`        | `World/VoxelWorld`           | A typed-in seed wins over the random one. After building, a new seed changes nothing                        |
 
 [↑ Contents](#contents)
 

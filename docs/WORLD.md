@@ -10,9 +10,9 @@
 
 ## Why chunks?
 
-Performance. The world is split into small pieces, so a change touches only one piece, not the whole world.
-A new chunk draws all its cubes once. After that, a change redraws only **7 cubes**.
-Only the chunks near the player exist, so the world has no edge.
+Performance. The world is split into small pieces, so a change touches only one piece.
+A new chunk draws all its cubes once. After that, a change in the chunk redraws only **7 cubes**.
+Only the chunks near the player exist.
 
 ## Positions
 
@@ -79,11 +79,11 @@ For each of the 7, the chunk compares what **should** be drawn with what **is** 
 | Solid, touches air           | Yes, its type    |
 | Solid, buried on all 6 sides | No               |
 
-| Should be | Is drawn now | What happens                     |
-| --------- | ------------ | -------------------------------- |
-| grass     | grass        | Nothing                          |
-| air       | grass        | The grass mesh removes its cube  |
-| stone     | air          | The stone mesh adds a cube       |
+| Should be | Is drawn now | What happens                    |
+| --------- | ------------ | ------------------------------- |
+| grass     | grass        | Nothing                         |
+| air       | grass        | The grass mesh removes its cube |
+| stone     | air          | The stone mesh adds a cube      |
 
 **Removing one cube.** A mesh numbers its cubes 0, 1, 2, … To remove one, the **last** cube takes its number:
 
@@ -123,15 +123,16 @@ Example with `ViewDistanceInChunks` = 2:
 
 - When the player walks into another chunk, the missing chunks are drawn nearest first, so the ground under the
   player comes first.
-- At most `MaxChunksPerFrame` chunks are filled, drawn or unloaded in one frame. So crossing a border does not stop
-  the game. Unloading comes last, so new ground never waits for old chunks to go.
+
+- At most `MaxChunksPerFrame` chunks are filled, drawn or unloaded in one frame. Unloading comes last, new ground never waits for old chunks to go.
+
 - At the start, everything around the middle loads at once, before the player is placed.
 - `ViewDistanceInChunks` (2 – 12) and `MaxChunksPerFrame` (1 – 8) are player settings
   ([Menus → Settings](MENUS.md#settings)). The start uses 4 and 2; the player's values arrive when play begins,
   and again on Apply. A bigger distance then fills in over the next frames.
 
-**Your changes.** A new chunk gets its cubes from the terrain again: same seed → same cubes.
-The world remembers every cube you changed. When a chunk loads again, your changes are put back on top.
+**Player's changes.** A new chunk gets its cubes from the terrain again: same seed → same cubes.
+The world remembers every cube you changed. When a chunk loads again, player's changes are put back on top.
 A cube you set back to what the terrain had there (mine stone, place stone) is forgotten: the terrain makes it anyway.
 Saving a world stores exactly these changes and the seed ([Menus → Saving](MENUS.md#saving)).
 
