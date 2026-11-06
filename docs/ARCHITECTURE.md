@@ -58,6 +58,7 @@ Game mode ──1. build──▶ World ──▶ Chunk, Chunk, Chunk ...   (onl
 |                                                      | `UMiningComponent`         | Mines cube after its mining time                                                                    | [Player → Mining and placing](PLAYER.md#mining-and-placing) |
 |                                                      | `UPlacingComponent`        | Places cube on the face you look at                                                                 | [Player → Mining and placing](PLAYER.md#mining-and-placing) |
 | `Game/` – start order of a game                      | `AKubeCraftGameMode`       | Builds the world and puts the player on it. Blueprint can build a saved world instead               | [Starting a game](#starting-a-game)                         |
+|                                                      | `UKubeCraftUserSettings`   | The player's settings: engine ones + view distance and chunks per frame, kept in their range        | [Menus → Settings](MENUS.md#settings)                       |
 
 ## Blueprints
 
@@ -76,6 +77,7 @@ Game mode ──1. build──▶ World ──▶ Chunk, Chunk, Chunk ...   (onl
 | `BP_MainMenuGameMode`      | Menu level: no player, shows the main menu                       | [Menus → Main menu](MENUS.md#main-menu)                                      |
 | `BP_WorldSave` + list      | One saved world, and which worlds are saved                      | [Menus → Saving](MENUS.md#saving)                                            |
 | `WBP_MainMenu` + parts     | Main menu, saved-world rows, settings page, menu button          | [Menus → Main menu](MENUS.md#main-menu)                                      |
+| `WBP_Settings` + parts     | Settings page, Video tab, slider and selector rows               | [Menus → Settings](MENUS.md#settings)                                        |
 | `WBP_PauseMenu`            | Esc menu: Resume, Save, Settings, Save & Quit                    | [Menus → Pause menu](MENUS.md#pause-menu)                                    |
 
 ## Starting a game
@@ -116,8 +118,9 @@ Saved/SaveGames/           saved worlds (made while playing, not in git)
 | Change a mining/placing limit             | `Blocks/BlockRules.cpp`                                                                      |
 | Change player size / jump                 | Numbers at the top of `Player/KubeCraftCharacter.cpp`                                        |
 | Change the hills                          | `BP_VoxelWorld` → Terrain                                                                    |
-| Change how far the player sees            | `BP_VoxelWorld` → Streaming → ViewDistanceInChunks                                           |
-| Change how fast new chunks appear         | `BP_VoxelWorld` → Streaming → MaxChunksPerFrame (higher = faster, frames may take longer)    |
+| Change how far the player sees            | Settings → Video → View distance (range: top of `Game/KubeCraftUserSettings.h`)              |
+| Change how fast new chunks appear         | Settings → Video → Chunks per frame (higher = faster, frames may take longer)                |
+| Add a row to the Video tab                | `WBP_VideoSettings`: add a slider/selector row, read it in LoadFromSettings, write in Apply  |
 | Get the same world again                  | Main menu → New World → type its seed (Load World shows the seed of each saved world)        |
 | Always get one world when playing L_World | `BP_VoxelWorld` → Seed, turn off `bRandomSeed`                                               |
 | Change keys                               | `IMC_Default` (Esc = `IA_Pause`)                                                             |
@@ -147,6 +150,7 @@ Saved/SaveGames/           saved worlds (made while playing, not in git)
 | `KubeCraft.Integration.MineAndPlace`      | `World/VoxelWorld`         | Mining and placing can change blocks. Placed type is the given type. A border change redraws the next chunk |
 | `KubeCraft.Integration.IncrementalRedraw` | `Rendering/`               | After many changes, only cubes that touch air are drawn, each with its right type                           |
 | `KubeCraft.Integration.ChunkStreaming`    | `World/ChunkStreaming…`    | Start draws the middle. Right chunks load, draw, unload. No walls. A few per call. Changes come back        |
+| `KubeCraft.Integration.StreamingSettings` | `Game/KubeCraftUserSettings` | Settings stay in range, defaults. A new view distance while playing draws the bigger circle               |
 | `KubeCraft.Integration.SaveLoad`          | `World/VoxelWorld`         | A save has the seed and all changes. A loaded world has them, drawn around the player. Unneeded ones go     |
 | `KubeCraft.Integration.CustomSeed`        | `World/VoxelWorld`         | A typed-in seed wins over the random one. After building, a new seed changes nothing                        |
 

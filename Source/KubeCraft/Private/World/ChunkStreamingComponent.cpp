@@ -51,6 +51,36 @@ UChunkStreamingComponent::UChunkStreamingComponent()
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 }
 
+void UChunkStreamingComponent::BeginPlay()
+{
+	Super::BeginPlay();
+	if (UKubeCraftUserSettings* Settings = UKubeCraftUserSettings::GetKubeCraftUserSettings())
+	{
+		SettingsAppliedHandle = Settings->OnApplied.AddUObject(this, &UChunkStreamingComponent::ApplyUserSettings);
+		ApplyUserSettings(*Settings);
+	}
+}
+
+void UChunkStreamingComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (UKubeCraftUserSettings* Settings = UKubeCraftUserSettings::GetKubeCraftUserSettings())
+	{
+		Settings->OnApplied.Remove(SettingsAppliedHandle);
+	}
+	Super::EndPlay(EndPlayReason);
+}
+
+void UChunkStreamingComponent::ApplyUserSettings(const UKubeCraftUserSettings& Settings)
+{
+	MaxChunksPerFrame = Settings.GetChunksPerFrame();
+	if (ViewDistanceInChunks != Settings.GetViewDistance())
+	{
+		ViewDistanceInChunks = Settings.GetViewDistance();
+		// The work around the player's chunk was finished for the old circle; the new one needs more (or less).
+		FinishedCenter.Reset();
+	}
+}
+
 void UChunkStreamingComponent::LoadAllAround(const FIntPoint& CenterChunk)
 {
 	if (UpdateAround(CenterChunk, MAX_int32))

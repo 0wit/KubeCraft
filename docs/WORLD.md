@@ -126,6 +126,9 @@ Example with `ViewDistanceInChunks` = 2:
 - At most `MaxChunksPerFrame` chunks are filled, drawn or unloaded in one frame. So crossing a border does not stop
   the game. Unloading comes last, so new ground never waits for old chunks to go.
 - At the start, everything around the middle loads at once, before the player is placed.
+- `ViewDistanceInChunks` (2 – 12) and `MaxChunksPerFrame` (1 – 8) are player settings
+  ([Menus → Settings](MENUS.md#settings)). The start uses 4 and 2; the player's values arrive when play begins,
+  and again on Apply. A bigger distance then fills in over the next frames.
 
 **Your changes.** A new chunk gets its cubes from the terrain again: same seed → same cubes.
 The world remembers every cube you changed. When a chunk loads again, your changes are put back on top.

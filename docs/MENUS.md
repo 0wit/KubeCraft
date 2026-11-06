@@ -5,7 +5,7 @@
 ## Contents
 
 [From menu to world](#from-menu-to-world) · [Main menu](#main-menu) · [Starting the world](#starting-the-world)
-· [Saving](#saving) · [Loading](#loading) · [Pause menu](#pause-menu) · [Input mode](#input-mode)
+· [Saving](#saving) · [Loading](#loading) · [Pause menu](#pause-menu) · [Settings](#settings) · [Input mode](#input-mode)
 
 Everything on this page is Blueprint. C++ only gives Blueprint the seed and the changed cubes
 (`AVoxelWorld`: `MakeSave`, `GenerateFromSave`, `SetSeed`, `TryParseSeed`).
@@ -30,7 +30,10 @@ Everything on this page is Blueprint. C++ only gives Blueprint the seed and the 
 | `WBP_WorldEntry`                | One saved world on the Load page                                      |
 | `WBP_PauseMenu`                 | Esc menu                                                              |
 | `WBP_MenuButton`                | The button of all menus: a label and an OnClicked event               |
-| `WBP_Settings`                  | Settings page: tabs and buttons, no settings yet                      |
+| `WBP_Settings`                  | Settings page: tabs, Apply, Defaults, Back, "keep these settings?"    |
+| `WBP_VideoSettings`             | The Video tab: its rows, and reading / applying the settings          |
+| `WBP_SettingSlider`             | One row: label, slider, number. OnValueChanged                        |
+| `WBP_SettingSelector`           | One row: label, < option >. OnSelectionChanged                        |
 | `BP_WorldSave`                  | One saved world                                                       |
 | `BP_WorldListSave`              | Which worlds are saved                                                |
 
@@ -127,6 +130,33 @@ Saved/SaveGames/
 
 - The game is paused while the menu is open. `IA_Pause` has "Trigger when Paused" on, so Esc still works.
 - `BP_KubeCraftCharacter` makes the menu on the first Esc and keeps it (TogglePauseMenu).
+
+## Settings
+
+`WBP_Settings` (main menu and pause menu) → Video tab (`WBP_VideoSettings`)
+
+| Row                    | Choices                                 | Stored by                    |
+| ---------------------- | --------------------------------------- | ---------------------------- |
+| Resolution             | The monitor's fullscreen sizes          | Engine (`UGameUserSettings`) |
+| Window mode            | Fullscreen, Windowed fullscreen, Window | Engine                       |
+| Quality                | Low, Medium, High, Epic                 | Engine (overall scalability) |
+| View distance (chunks) | 2 – 12                                  | `UKubeCraftUserSettings`     |
+| Chunks per frame       | 1 – 8                                   | `UKubeCraftUserSettings`     |
+
+- All of them are saved in `Saved/Config/Windows/GameUserSettings.ini`, for every world.
+- `UKubeCraftUserSettings` (C++) is the engine's settings class plus the two chunk values. It keeps them in their
+  range, also when the ini is edited by hand. Set in `DefaultEngine.ini` (`GameUserSettingsClassName`).
+
+| Button   | What it does                                                                            |
+| -------- | --------------------------------------------------------------------------------------- |
+| Apply    | Uses and saves the rows. View distance changes while playing                            |
+| Defaults | Puts the default values in the rows. Apply uses them                                    |
+| Back     | Forgets rows that were not applied, returns                                             |
+
+- **Keep these settings?** After Apply changed resolution or window mode, a 10 s countdown asks
+  (`ConfirmDuration`). Keep stays; Revert, or no answer, goes back to the last kept size.
+  The countdown runs in the widget's Tick, so it also works while the game is paused.
+  Leaving the page another way during the countdown (e.g. Esc closes the pause menu) reverts too (Event Destruct).
 
 ## Input mode
 

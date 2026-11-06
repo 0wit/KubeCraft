@@ -174,4 +174,76 @@ bool FChunkStreamingTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+/**
+ * Checks the player's streaming settings: UKubeCraftUserSettings keeps view distance and chunks per frame inside their
+ * ranges, and applying new settings while playing makes the streaming draw the new circle around the same player.
+ */
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStreamingSettingsTest, "KubeCraft.Integration.StreamingSettings",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+
+bool FStreamingSettingsTest::RunTest(const FString& Parameters)
+{
+	// 1. Ranges. A settings object of its own, so the player's real settings stay untouched.
+	UKubeCraftUserSettings* Settings = NewObject<UKubeCraftUserSettings>();
+	Settings->SetViewDistance(1000);
+	TestEqual(TEXT("View distance too far -> max"), Settings->GetViewDistance(), UKubeCraftUserSettings::MaxViewDistance);
+	Settings->SetViewDistance(0);
+	TestEqual(TEXT("View distance too near -> min"), Settings->GetViewDistance(), UKubeCraftUserSettings::MinViewDistance);
+	Settings->SetChunksPerFrame(1000);
+	TestEqual(TEXT("Chunks per frame too many -> max"), Settings->GetChunksPerFrame(),
+		UKubeCraftUserSettings::MaxChunksPerFrame);
+	Settings->SetChunksPerFrame(-3);
+	TestEqual(TEXT("Chunks per frame too few -> min"), Settings->GetChunksPerFrame(),
+		UKubeCraftUserSettings::MinChunksPerFrame);
+	// Defaults: a real resolution and one quality level for the settings page, and the kept resolution survives.
+	const FIntPoint Kept(1234, 567);
+	Settings->SetScreenResolution(Kept);
+	Settings->ConfirmVideoMode();
+	Settings->SetToDefaults();
+	TestEqual(TEXT("Default view distance"), Settings->GetViewDistance(), UKubeCraftUserSettings::DefaultViewDistance);
+	TestEqual(TEXT("Default chunks per frame"), Settings->GetChunksPerFrame(),
+		UKubeCraftUserSettings::DefaultChunksPerFrame);
+	TestEqual(TEXT("Default quality is one overall level"), Settings->GetOverallScalabilityLevel(),
+		UKubeCraftUserSettings::DefaultQualityLevel);
+	if (Settings->GetDesktopResolution().X > 0)	// No desktop size without a screen (e.g. -nullrhi).
+	{
+		TestEqual(TEXT("Default resolution is the desktop's"), Settings->GetScreenResolution(),
+			Settings->GetDesktopResolution());
+	}
+	Settings->RevertVideoMode();
+	TestEqual(TEXT("Revert after Defaults -> the kept resolution"), Settings->GetScreenResolution(), Kept);
+	Settings->SetToDefaults();
+
+	// 2. A built world, finished around the start with the smallest view distance.
+	const FTestVoxelWorld Test(FTestVoxelWorld::EChunks::None);
+	if (!TestNotNull(TEXT("Test world"), Test.World))
+	{
+		return false;
+	}
+	AVoxelWorld& World = *Test.World;
+	UChunkStreamingComponent& Streaming = *Test.GetStreaming();
+	const FIntPoint Start = FIntPoint::ZeroValue;
+	Settings->SetViewDistance(UKubeCraftUserSettings::MinViewDistance);
+	Streaming.ApplyUserSettings(*Settings);
+	World.Generate();
+	TestTrue(TEXT("Start finished"), Streaming.FinishedCenter == Start);
+
+	// 3. The player sees one chunk further: the work around the start is open again, and the bigger circle gets drawn.
+	const int32 Further = UKubeCraftUserSettings::MinViewDistance + 1;
+	Settings->SetViewDistance(Further);
+	Settings->SetChunksPerFrame(UKubeCraftUserSettings::MaxChunksPerFrame);
+	Streaming.ApplyUserSettings(*Settings);
+	TestFalse(TEXT("New view distance -> streams again"), Streaming.FinishedCenter.IsSet());
+	TestEqual(TEXT("Chunks per frame taken"), Streaming.MaxChunksPerFrame, UKubeCraftUserSettings::MaxChunksPerFrame);
+	Streaming.UpdateAround(Start, MAX_int32);
+	TestTrue(TEXT("Bigger circle drawn"), SameChunks(DrawnChunks(World), ChunksWithin(Start, Further)));
+
+	// The same settings again change nothing: the finished work stays finished.
+	Streaming.LoadAllAround(Start);
+	Streaming.ApplyUserSettings(*Settings);
+	TestTrue(TEXT("Same view distance -> stays finished"), Streaming.FinishedCenter == Start);
+
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS
